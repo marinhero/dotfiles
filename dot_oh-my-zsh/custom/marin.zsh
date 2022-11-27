@@ -18,6 +18,7 @@ alias gs='git status'
 alias l='ls -l'
 alias ne='vim'
 alias pom='git pull origin master --rebase'
+alias vim='nvim'
 alias vimrc='vim ~/.vimrc'
 alias zshrc='vim ~/.oh-my-zsh/custom/marin.zsh'
 
