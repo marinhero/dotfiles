@@ -2,11 +2,11 @@
 
 set -o vi
 set bell-style none
-shopt -s histappend
 
 #------------ALIAS------------
 
 alias blog='cd ~/Code/marinhero.github.io'
+alias gap='git add --patch'
 alias gc='git commit -v'
 alias gca='git commit -v --amend'
 alias gcm='git checkout master'
@@ -19,6 +19,7 @@ alias l='ls -l'
 alias ne='vim'
 alias pom='git pull origin master --rebase'
 alias vimrc='vim ~/.vimrc'
+alias zshrc='~/.oh-my-zsh/custom/marin.zsh'
 
 
 #-----------COLORED MAN----------------
@@ -34,20 +35,3 @@ man() {
         LESS_TERMCAP_us="$(printf "\e[1;32m")" \
         man "$@"
 }
-
-#-------DIFF-SO-FANCY------------------
-git config --global color.ui true
-
-git config --global color.diff-highlight.oldNormal    "red bold"
-git config --global color.diff-highlight.oldHighlight "red bold 52"
-git config --global color.diff-highlight.newNormal    "green bold"
-git config --global color.diff-highlight.newHighlight "green bold 22"
-
-git config --global color.diff.meta       "11"
-git config --global color.diff.frag       "magenta bold"
-git config --global color.diff.func       "146 bold"
-git config --global color.diff.commit     "yellow bold"
-git config --global color.diff.old        "red bold"
-git config --global color.diff.new        "green bold"
-git config --global color.diff.whitespace "red reverse"
-
