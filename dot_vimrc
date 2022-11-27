@@ -25,18 +25,20 @@ call plug#begin()
   Plug 'whiteinge/diffconflicts'
   Plug 'ayu-theme/ayu-vim'
   Plug 'mbbill/undotree'
+  Plug 'Yggdroot/indentLine'
 call plug#end()
 
 " Looks
 scriptencoding utf-8
 set encoding=utf-8
 
-set guifont="Iosevka Fixed":h18
 set termguicolors
 let ayucolor='dark'
 colorscheme ayu
 
+
 let g:indentLine_setColors = 0
+let g:indentLine_color_term = 239
 
 function! ToggleQuickFix()
   if exists('g:qwindow')
