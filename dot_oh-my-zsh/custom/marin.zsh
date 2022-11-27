@@ -21,7 +21,6 @@ alias pom='git pull origin master --rebase'
 alias vimrc='vim ~/.vimrc'
 alias zshrc='vim ~/.oh-my-zsh/custom/marin.zsh'
 
-
 #-----------COLORED MAN----------------
 
 man() {
@@ -45,3 +44,23 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   alias show-hidden='defaults write com.apple.Finder AppleShowAllFiles TRUE'
   alias hide='defaults write com.apple.Finder AppleShowAllFiles FALSE'
 fi
+
+#--------GOTO--------------
+
+goto() {
+  repo=$1
+
+  # Re-map blog reop
+  if [[ $repo == "blog" ]]
+  then
+    repo="marinhero.github.io"
+  fi
+
+  dir="$HOME/Code/$repo"
+  if [ -d $dir ]
+  then
+    cd $dir
+  else
+    git clone "git@github.com:/marinhero/$repo" $dir && cd $dir
+  fi
+}
