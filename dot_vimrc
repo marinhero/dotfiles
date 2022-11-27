@@ -1,0 +1,166 @@
+" Author: Marin Alcaraz  <alcara_@pm.me>
+
+" This must be first, because it changes other options as a side effect.
+set nocompatible
+
+" Plugin Manager Auto-Install
+let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
+if empty(glob(data_dir . '/autoload/plug.vim'))
+  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+call plug#begin()
+  Plug 'ayu-theme/ayu-vim'
+  Plug 'rking/ag.vim'
+  Plug 'mattn/emmet-vim'
+  Plug 'tpope/vim-surround'
+  Plug 'scrooloose/nerdtree'
+  Plug 'scrooloose/nerdcommenter'
+  Plug 'vim-airline/vim-airline'
+  Plug 'vim-airline/vim-airline-themes'
+  Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+  Plug 'junegunn/fzf.vim'
+  Plug 'szw/vim-smartclose'
+  Plug 'whiteinge/diffconflicts'
+  Plug 'ayu-theme/ayu-vim'
+  Plug 'mbbill/undotree'
+call plug#end()
+
+" Looks
+scriptencoding utf-8
+set encoding=utf-8
+
+set guifont="Iosevka Fixed":h18
+set termguicolors
+let ayucolor='dark'
+colorscheme ayu
+
+let g:indentLine_setColors = 0
+
+function! ToggleQuickFix()
+  if exists('g:qwindow')
+    lclose
+    unlet g:qwindow
+  else
+    try
+      lopen 10
+      let g:qwindow = 1
+    catch
+      echo "No Errors found!"
+    endtry
+  endif
+endfunction
+
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
+autocmd BufRead,BufNewFile *.md setlocal spell
+autocmd! GUIEnter * set vb t_vb=
+autocmd FileChangedShell * echohl WarningMsg | echo "File changed shell." | echohl None
+
+highlight ExtraWhitespace ctermbg=red guibg=red ctermfg=red guifg=red
+highlight OverLength ctermbg=red ctermfg=white guibg=#592929
+
+if has("persistent_undo")
+  set undofile
+  set undodir=/Users/marin/.vim/undo
+endif
+
+let mapleader = ","
+
+match ExtraWhitespace /\s\+$/
+match OverLength /\%81v.\+/
+
+nmap <script> <silent> <F1> :call ToggleQuickFix()<CR>
+nnoremap <F2> :set invpaste paste?<CR>
+map <F6> :NERDTreeToggle<CR>
+nnoremap <F5> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar><CR>
+nnoremap <F7> :UndotreeToggle<cr>
+nnoremap <space><space> :Ag<space>
+nnoremap <CR> :noh<CR><CR>
+nnoremap <silent><F1> :SmartClose<CR>
+vnoremap <silent><F1> :SmartClose<CR>
+inoremap <silent><F1> <C-[>:SmartClose<CR>
+
+set autoindent
+set backspace=2
+set colorcolumn=100
+set confirm
+set cpoptions+=ces$
+set encoding=utf-8
+set expandtab
+set history=1000
+set hlsearch
+set ignorecase
+set incsearch
+set laststatus=2
+"set list listchars=tab:» ,nbsp:•,trail:·,extends:»,precedes:«
+set mouse=a
+set noerrorbells
+set novisualbell
+set number
+set pastetoggle=<F2>
+set showmatch
+set smarttab
+set spelllang=es,en
+set sts=2
+set sw=2
+set ts=2
+set wildignore+=*.ipa,*.xcodeproj/*,*.xib,*.cer,*.icns
+set wildignore+=*.jpg,*.jpeg,*.gif,*.png,*.ico
+set wildignore+=*.o,*.a,*.pyc,*.git,*.svn,*.sw*,*.d
+set wildignore+=*.pid
+set wildignore+=*.sqlite3
+set wildignore+=*/tmp/*
+syntax on
+vnoremap // y/<C-R>"<CR>
+set clipboard=unnamed
+
+"Emmet
+let g:user_emmet_leader_key='<C-E>'
+
+"Airline
+set laststatus=2
+let g:airline_theme='powerlineish'
+let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#left_sep = ' '
+let g:airline#extensions#tabline#left_alt_sep = '|'
+if !exists('g:airline_symbols')
+  let g:airline_symbols = {}
+endif
+let g:airline_symbols.space = "\ua0"
+let g:bufferline_echo = 0
+let g:airline#extensions#ale#enabled = 1
+let g:airline#extensions#hunks#enabled=0
+let g:airline_section_y = ''
+let g:airline_section_c = '%t'
+
+" FZF
+inoremap <expr> <c-x><c-k> fzf#vim#complete('cat /usr/share/dict/words')
+map <c-p> :Files<CR>
+map <c-c> :Commits<CR>
+map <c-b> :Buffers<CR>
+map <c-f> :Buffers<CR>
+nmap <leader><tab> <plug>(fzf-maps-n)
+xmap <leader><tab> <plug>(fzf-maps-x)
+omap <leader><tab> <plug>(fzf-maps-o)
+imap <c-x><c-f> <plug>(fzf-complete-path)
+imap <c-x><c-j> <plug>(fzf-complete-file-ag)
+imap <c-x><c-l> <plug>(fzf-complete-line)
+nnoremap <C-J> <C-W><C-J>
+nnoremap <C-K> <C-W><C-K>
+nnoremap <C-L> <C-W><C-L>
+nnoremap <C-H> <C-W><C-H>
+function! s:fzf_statusline()
+  highlight fzf1 ctermfg=161 ctermbg=251
+  highlight fzf2 ctermfg=23 ctermbg=251
+  highlight fzf3 ctermfg=237 ctermbg=251
+  setlocal statusline=%#fzf1#\ >\ %#fzf2#fz%#fzf3#f
+endfunction
+autocmd! User FzfStatusLine call <SID>fzf_statusline()
+if executable('ag')
+  let $FZF_DEFAULT_COMMAND = 'ag -g ""'
+  set grepprg=ag\ --nogroup\ --nocolor
+endif
+
+set rtp+=/usr/local/opt/fzf
+
