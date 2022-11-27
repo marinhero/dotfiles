@@ -19,7 +19,7 @@ alias l='ls -l'
 alias ne='vim'
 alias pom='git pull origin master --rebase'
 alias vimrc='vim ~/.vimrc'
-alias zshrc='~/.oh-my-zsh/custom/marin.zsh'
+alias zshrc='vim ~/.oh-my-zsh/custom/marin.zsh'
 
 
 #-----------COLORED MAN----------------
@@ -35,3 +35,13 @@ man() {
         LESS_TERMCAP_us="$(printf "\e[1;32m")" \
         man "$@"
 }
+
+#------------ENV-----------------
+export HISTTIMEFORMAT="%d/%m/%y %T "
+export SUDO_PS1='\[\e[0;31m\]\u\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[0;31m\]\$ \[\e[m\]\[\e[0;32m\]'
+
+#--------------MAC OS-------------
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  alias show-hidden='defaults write com.apple.Finder AppleShowAllFiles TRUE'
+  alias hide='defaults write com.apple.Finder AppleShowAllFiles FALSE'
+fi
