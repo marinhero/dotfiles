@@ -1,3 +1,3 @@
 # Dotfiles
 
-Managed by (chezmoi)[https://www.chezmoi.io]
+Managed by ]chezmoi](https://www.chezmoi.io)
