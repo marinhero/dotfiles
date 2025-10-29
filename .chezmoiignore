@@ -1,0 +1,4 @@
+# Files that should NOT be managed by chezmoi
+# These files should be maintained locally on each machine
+
+.zshrc

@@ -1,0 +1,16 @@
+{{- $hostname := .chezmoi.hostname -}}
+{{- $machine := "unknown" -}}
+
+{{- if eq $hostname "GJHLXK2QHD" -}}
+{{-   $machine = "work" -}}
+{{- else if eq $hostname "nostromo" -}}
+{{-   $machine = "desktop" -}}
+{{- else if eq $hostname "march" -}}
+{{-   $machine = "personal-laptop" -}}
+{{- end -}}
+
+[data]
+    machine = {{ $machine | quote }}
+    is_work = {{ eq $machine "work" }}
+    is_desktop = {{ eq $machine "desktop" }}
+    is_personal_laptop = {{ eq $machine "personal-laptop" }}

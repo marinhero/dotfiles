@@ -1,0 +1,221 @@
+#------------SHELL CONFIG-------------
+
+set -o vi
+set bell-style none
+
+#------------ALIAS (Shared)------------
+
+alias blog='cd ~/Code/marinhero.github.io'
+alias gap='git add --patch'
+alias gc='git commit -v'
+alias gca='git commit -v --amend'
+alias gcm='git checkout master'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias gra='git reset --soft HEAD@{1}'
+alias gri='git fetch && git rebase -i origin/master'
+alias gs='git status'
+alias l='ls -l'
+alias ne='vim'
+alias pom='git pull origin master --rebase'
+alias vim='nvim'
+alias vimrc='vim ~/.vimrc'
+alias zshrc='vim ~/.oh-my-zsh/custom/marin.zsh'
+
+{{- if .is_work }}
+# Work-specific aliases
+{{- end }}
+
+{{- if .is_desktop }}
+# Desktop-specific aliases
+{{- end }}
+
+{{- if .is_personal_laptop }}
+# Personal laptop-specific aliases
+{{- end }}
+
+#-----------COLORED MAN----------------
+
+man() {
+    env \
+        LESS_TERMCAP_mb="$(printf "\e[1;31m")" \
+        LESS_TERMCAP_md="$(printf "\e[1;31m")" \
+        LESS_TERMCAP_me="$(printf "\e[0m")" \
+        LESS_TERMCAP_se="$(printf "\e[0m")" \
+        LESS_TERMCAP_so="$(printf "\e[1;44;33m")" \
+        LESS_TERMCAP_ue="$(printf "\e[0m")" \
+        LESS_TERMCAP_us="$(printf "\e[1;32m")" \
+        man "$@"
+}
+
+#------------ENV-----------------
+export HISTTIMEFORMAT="%d/%m/%y %T "
+export SUDO_PS1='\[\e[0;31m\]\u\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[0;31m\]\$ \[\e[m\]\[\e[0;32m\]'
+
+{{- if .is_work }}
+# Work-specific environment variables
+{{- end }}
+
+{{- if .is_desktop }}
+# Desktop-specific environment variables
+{{- end }}
+
+{{- if .is_personal_laptop }}
+# Personal laptop-specific environment variables
+{{- end }}
+
+#--------------MAC OS-------------
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  alias show-hidden='defaults write com.apple.Finder AppleShowAllFiles TRUE'
+  alias hide='defaults write com.apple.Finder AppleShowAllFiles FALSE'
+fi
+
+{{- if not .is_work }}
+#--------GOTO--------------
+
+goto() {
+  repo=$1
+
+  # Re-map blog reop
+  if [[ $repo == "blog" ]]
+  then
+    repo="marinhero.github.io"
+  fi
+
+  dir="$HOME/Code/$repo"
+  if [ -d $dir ]
+  then
+    cd $dir
+  else
+    git clone "git@github.com:/marinhero/$repo" $dir && cd $dir
+  fi
+}
+{{- end }}
+
+#------------MACHINE-SPECIFIC CONFIG------------
+
+{{- if .is_work }}
+# Work-specific functions and configuration
+
+function _fetch_bedrock_models() {
+  # Fetch and parse available Bedrock models
+  # Returns a JSON map of friendly names to full model IDs
+
+  # Get all Claude models from AWS Bedrock
+  local models_json=$(aws bedrock list-inference-profiles \
+    --region us-west-2 \
+    --profile twilio-devex-bedrock \
+    --query "inferenceProfileSummaries[?contains(inferenceProfileName, 'Claude') && type=='SYSTEM_DEFINED' && status=='ACTIVE']")
+
+  # Handle potential AWS CLI errors
+  if [[ $? -ne 0 ]]; then
+    echo "{}" # Return empty JSON on error
+    return 1
+  fi
+
+  # Create short model aliases (e.g., "3-5-sonnet", "opus-4-1")
+  # by extracting from the full model name and converting to lowercase with hyphens
+  local model_map=$(echo "$models_json" | jq -r '.[] | "\"\(.inferenceProfileName | gsub(".*Claude "; "") | ascii_downcase | gsub("[^a-z0-9]"; "-"))\": \"\(.inferenceProfileId)\","')
+
+  # Add convenience aliases for the latest versions of common model families
+  # This helps users use simple commands like "claude-bedrock haiku" instead of "claude-bedrock 3-5-haiku"
+  echo "{
+    $model_map
+    \"haiku\": $(echo "$models_json" | jq -r '.[] | select(.inferenceProfileName | contains("Haiku")) | .inferenceProfileId' | sort | tail -n1 | awk '{print "\""$0"\""}'),
+    \"sonnet\": $(echo "$models_json" | jq -r '.[] | select(.inferenceProfileName | contains("Sonnet")) | .inferenceProfileId' | sort | tail -n1 | awk '{print "\""$0"\""}')
+  }"
+}
+
+function claude-bedrock() {
+  # Main function that sets up the Anthropic model environment and launches Claude
+
+  # Cache configuration
+  local cache_file="${HOME}/.bedrock_models_cache"
+  local cache_timeout=3600  # Cache timeout in seconds (1 hour)
+  local current_time=$(date +%s)
+  local model_map=""
+
+  # Check if cache file exists and is recent
+  if [[ -f "$cache_file" ]] && \
+     [[ $(($current_time - $(stat -f %m "$cache_file"))) -lt $cache_timeout ]]; then
+    # Use cached data
+    model_map=$(cat "$cache_file")
+    # Verify cache contains valid JSON
+    if ! echo "$model_map" | jq empty &>/dev/null; then
+      # Cache is corrupt, refresh it
+      model_map=$(_fetch_bedrock_models)
+      echo "$model_map" > "$cache_file"
+    fi
+  else
+    # Fetch fresh model data
+    model_map=$(_fetch_bedrock_models)
+    # Only cache if we got valid data
+    if [[ $? -eq 0 ]] && [[ $(echo "$model_map" | jq 'length') -gt 0 ]]; then
+      echo "$model_map" > "$cache_file"
+    fi
+  fi
+
+  # Show help if requested or if no models are available
+  if [[ "$1" == "-h" || "$1" == "help" || "$1" == "--help" ]] || [[ $(echo "$model_map" | jq 'length') -eq 0 ]]; then
+    echo "Usage: claude-bedrock [MODEL]"
+    echo "Sets the ANTHROPIC_MODEL environment variable and launches claude with the specified model."
+    echo ""
+    echo "Available models:"
+    echo "$model_map" | jq -r 'keys | .[]' | sort | column
+    echo ""
+    echo "Examples:"
+    echo "  claude-bedrock sonnet     # Use Sonnet model"
+    echo "  claude-bedrock haiku      # Use Haiku model"
+    echo "  claude-bedrock            # Default to latest available model"
+
+    # Exit with error if no models are available and help wasn't explicitly requested
+    if [[ $(echo "$model_map" | jq 'length') -eq 0 ]] && [[ "$1" != "-h" && "$1" != "help" && "$1" != "--help" ]]; then
+      echo -e "\nError: No models available. Please check your AWS credentials and network connectivity."
+      return 1
+    fi
+
+    return 0
+  fi
+
+  # Select model to use:
+  # 1. Use user-specified model if provided
+  # 2. Fallback to "haiku" shortcut if available
+  # 3. Fallback to "3-5-haiku" if available
+  # 4. Use the last model in alphabetical order as last resort
+  local default_model=$(echo "$model_map" | jq -r 'if has("haiku") then "haiku" elif has("3-5-haiku") then "3-5-haiku" else keys | sort | .[-1] end')
+  local short_model="${1:-$default_model}"
+
+  # Get the full model ID from the short name
+  local model_id=$(echo "$model_map" | jq -r --arg model "$short_model" '.[$model] // ""')
+
+  # Handle unknown model
+  if [[ -z "$model_id" ]]; then
+    echo "Unknown model: $short_model"
+    echo "Valid options:"
+    echo "$model_map" | jq -r 'keys | .[]' | sort | column
+    echo "Use 'claude-bedrock help' for more information."
+    return 1
+  fi
+
+  # Set environment variables for Claude
+  export ANTHROPIC_MODEL="$model_id"
+  # Set a suitable small fast model for web fetching (prefer latest Haiku)
+  export ANTHROPIC_SMALL_FAST_MODEL=$(echo "$model_map" | jq -r '.["haiku"] // .["3-5-haiku"] // ""')
+
+  # Inform user which model is being used
+  echo "Using model: $short_model ($model_id)"
+
+  # Run Claude
+  claude
+}
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+{{- end }}
+
+{{- if .is_desktop }}
+# Desktop-specific functions and configuration
+{{- end }}
+
+{{- if .is_personal_laptop }}
+# Personal laptop-specific functions and configuration
+{{- end }}
