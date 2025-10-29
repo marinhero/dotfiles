@@ -21,7 +21,7 @@ mouse_mode true
 copy_on_select true
 
 // Path to the default layout file that will be used when starting zellij
-// default_layout "default"
+// default_layout "/path/to/layout"
 
 // Enable automatic pane frames
 pane_frames true
@@ -34,6 +34,9 @@ default_mode "normal"
 
 // Enable or disable simplified UI (hide UI bars by default)
 simplified_ui false
+
+// Show startup tips on launch
+show_startup_tips false
 
 // Scrollback editor
 // scrollback_editor "/usr/bin/nvim"
@@ -155,6 +158,7 @@ keybinds clear-defaults=true {
         bind "d" { HalfPageScrollDown; }
         bind "u" { HalfPageScrollUp; }
         bind "s" { SwitchToMode "entersearch"; SearchInput 0; }
+        bind "Ctrl Shift c" { Copy; SwitchToMode "normal"; }
     }
 
     // Search mode
@@ -217,6 +221,9 @@ keybinds clear-defaults=true {
         bind "Alt -" { Resize "Decrease"; }
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
+        bind "Ctrl Shift f" { ToggleFocusFullscreen; }
+        bind "Ctrl Shift p" { TogglePaneFrames; }
+        bind "Ctrl Shift b" { BreakPane; }
     }
 
     shared_except "normal" "locked" {
@@ -228,12 +235,22 @@ keybinds clear-defaults=true {
 // Plugins
 // ===================================
 
-plugins {
-    tab-bar { path "tab-bar"; }
-    status-bar { path "status-bar"; }
-    strider { path "strider"; }
-    compact-bar { path "compact-bar"; }
-    session-manager { path "session-manager"; }
+plugins lock-plugins=true {
+    tab-bar {
+        location "zellij:tab-bar"
+    }
+    status-bar {
+        location "zellij:status-bar"
+    }
+    strider {
+        location "zellij:strider"
+    }
+    compact-bar {
+        location "zellij:compact-bar"
+    }
+    session-manager {
+        location "zellij:session-manager"
+    }
 }
 
 // ===================================
@@ -336,8 +353,8 @@ mirror_session false
 // Options: "system" (default), "primary"
 // copy_clipboard "system"
 
-// Copy command override (for macOS use pbcopy, for wayland use wl-copy, for X11 use xclip
-copy_command "pbcopy"
+// Copy command override (wraps platform-specific clipboard helpers)
+copy_command "{{ .chezmoi.homeDir }}/.local/bin/zellij-copy"
 
 // ===================================
 // Scrollback Configuration
