@@ -16,6 +16,7 @@ This script resolves common warnings and errors found when running `:checkhealth
 - ✅ **fd/fdfind** - Fast file finder required by LazyVim and Snacks
 - ✅ **lazygit** - Git TUI integration for LazyVim
 - ✅ **ast-grep** - Advanced code search for grug-far plugin
+- ✅ **ImageMagick** - Image rendering support for snacks.nvim
 - ✅ **Python neovim module** - Required for Python provider
 - ✅ **Node.js neovim package** - Required for Node.js provider
 - ✅ **Ruby neovim gem** - Required for Ruby provider
@@ -26,7 +27,6 @@ This script resolves common warnings and errors found when running `:checkhealth
 - Installs `pynvim` package
 
 #### Optional Items (Interactive)
-- ImageMagick - For image rendering in snacks.nvim
 - Perl provider - Can be disabled (rarely needed)
 
 ### Usage
@@ -100,7 +100,7 @@ From your original `:checkhealth` output:
 | mason | java missing | Optional | Install if doing Java dev |
 | snacks | lazygit missing | Fixed | Script installs via brew |
 | snacks | fd missing | Fixed | Script installs via brew |
-| snacks | ImageMagick missing | Optional | Script offers to install |
+| snacks | ImageMagick missing | Fixed | Script installs via brew |
 | vim.provider | Node neovim missing | Fixed | Script installs globally |
 | vim.provider | Python neovim missing | Fixed | Script installs pynvim |
 | vim.provider | Ruby neovim missing | Fixed | Script installs gem |

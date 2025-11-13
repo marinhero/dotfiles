@@ -54,6 +54,7 @@ BREW_PACKAGES=(
     "fd"           # File finder (lazyvim requirement)
     "lazygit"      # Git UI (lazyvim requirement)
     "ast-grep"     # Advanced searching (grug-far)
+    "imagemagick"  # Image rendering in snacks.nvim
 )
 
 for package in "${BREW_PACKAGES[@]}"; do
@@ -160,39 +161,9 @@ fi
 echo ""
 
 # ============================================================================
-# SECTION 5: Optional Tools
+# SECTION 5: Provider Configuration
 # ============================================================================
-log_info "Section 5: Optional tools (can be skipped)"
-
-OPTIONAL_PACKAGES=(
-    "imagemagick"  # For image rendering in snacks.nvim
-)
-
-for package in "${OPTIONAL_PACKAGES[@]}"; do
-    if brew list "$package" &> /dev/null 2>&1; then
-        log_success "$package is already installed"
-    else
-        read -p "Install optional package '$package'? (y/N): " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            log_info "Installing $package..."
-            if brew install "$package"; then
-                log_success "$package installed successfully"
-            else
-                log_warning "Failed to install $package"
-            fi
-        else
-            log_info "Skipping $package"
-        fi
-    fi
-done
-
-echo ""
-
-# ============================================================================
-# SECTION 6: Disable Optional Providers (if desired)
-# ============================================================================
-log_info "Section 6: Provider configuration"
+log_info "Section 5: Provider configuration"
 
 NVIM_INIT_FILE="$HOME/.config/nvim/init.lua"
 PROVIDER_CONFIG="$HOME/.config/nvim/lua/config/providers.lua"
@@ -245,9 +216,9 @@ fi
 echo ""
 
 # ============================================================================
-# SECTION 7: Fix luarocks (Optional)
+# SECTION 6: Fix luarocks (Optional)
 # ============================================================================
-log_info "Section 7: Luarocks setup (optional)"
+log_info "Section 6: Luarocks setup (optional)"
 
 cat << 'EOF'
 Luarocks warnings can be safely ignored unless you have plugins that require it.
@@ -269,10 +240,11 @@ echo ""
 log_success "Configuration fixes completed!"
 echo ""
 log_info "Summary of actions taken:"
-echo "  ✓ Installed critical tools (fd, lazygit, ast-grep)"
+echo "  ✓ Installed critical tools (fd, lazygit, ast-grep, imagemagick)"
 echo "  ✓ Fixed Python setup and installed pynvim"
 echo "  ✓ Installed Node.js neovim package"
 echo "  ✓ Installed Ruby neovim gem"
+echo "  ✓ Installed ImageMagick for snacks.nvim image support"
 echo ""
 log_info "Next steps:"
 echo "  1. Restart your terminal or run: source ~/.zshrc (or ~/.bashrc)"
@@ -281,7 +253,6 @@ echo "  3. Most warnings should now be resolved"
 echo ""
 log_warning "Remaining optional items:"
 echo "  - Language-specific tools (cargo, java, php, julia) - install as needed"
-echo "  - Image tools for snacks.nvim - install ImageMagick if you need image support"
 echo "  - Terminal graphics - iTerm doesn't support kitty graphics protocol (this is expected)"
 echo ""
 log_info "For reference, your health check can be run with: nvim +checkhealth"
