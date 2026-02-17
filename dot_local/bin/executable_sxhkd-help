@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# sxhkd-help — display bspwm/sxhkd keybindings in rofi
+#
+# Parses the sxhkdrc config and presents a searchable cheatsheet.
+# Bound to super+slash by default.
+#
+set -euo pipefail
+
+SXHKDRC="${XDG_CONFIG_HOME:-$HOME/.config}/sxhkd/sxhkdrc"
+
+if [[ ! -f "$SXHKDRC" ]]; then
+  notify-send "sxhkd-help" "Config not found: $SXHKDRC" 2>/dev/null
+  exit 1
+fi
+
+# Parse sxhkdrc: pair each comment line with the keybinding that follows it.
+# Format: "keybinding → description"
+awk '
+  /^# ---/ { next }                   # skip section dividers
+  /^# / {
+    # capture comment as description, strip leading "# "
+    desc = substr($0, 3)
+    next
+  }
+  /^[a-zA-Z]/ && desc != "" {
+    # this is a keybinding line
+    key = $0
+    printf "%-36s  %s\n", key, desc
+    desc = ""
+  }
+  /^$/ { desc = "" }                  # reset on blank lines
+' "$SXHKDRC" | rofi -dmenu -i \
+  -p "Keybindings" \
+  -theme-str 'window { width: 700px; }' \
+  -theme-str 'listview { lines: 20; }' \
+  -no-custom

@@ -11,9 +11,6 @@ default_shell "zsh"
 // Default layout
 // default_layout "compact"
 
-// Prefer sending the 'delete' key instead of backspace
-send_del_instead_of_backspace false
-
 // Enable or disable mouse support
 mouse_mode true
 
@@ -27,9 +24,9 @@ copy_on_select true
 pane_frames true
 
 // Theme choice
-theme "catppuccin-mocha"
+theme "nord"
 
-// Choose the base index for panes and tabs (default is 0)
+// Start in normal mode (alternatives: locked, pane, tab, etc.)
 default_mode "normal"
 
 // Enable or disable simplified UI (hide UI bars by default)
@@ -342,18 +339,14 @@ themes {
 // Layout directory
 // layout_dir "/path/to/layouts"
 
-// Mirror session enable/disable
-mirror_session false
-
 // ===================================
 // Copy Configuration
 // ===================================
 
-// Choose clipboard type
-// Options: "system" (default), "primary"
-// copy_clipboard "system"
+// Use the system clipboard (not X11 primary selection)
+copy_clipboard "system"
 
-// Copy command override (wraps platform-specific clipboard helpers)
+// Copy command override (cross-platform clipboard helper)
 copy_command "{{ .chezmoi.homeDir }}/.local/bin/zellij-copy"
 
 // ===================================

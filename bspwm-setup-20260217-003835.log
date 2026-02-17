@@ -1,0 +1,53 @@
+=== bspwm setup — Tue Feb 17 12:38:35 AM PST 2026 — Linux discovery 6.18.8-1-default #1 SMP PREEMPT_DYNAMIC Fri Jan 30 12:17:19 UTC 2026 (0df318e) x86_64 x86_64 x86_64 GNU/Linux ===
+[00:38:35] INFO: Logging to /home/marin/Code/dotfiles/bspwm-setup-20260217-003835.log
+[00:38:35] INFO: Preflight checks passed (user=marin, home=/home/marin)
+[00:38:35] INFO: --- Installing bspwm packages ---
+[00:38:35] SKIP: bspwm
+[00:38:35] SKIP: bspwm-zsh-completion
+[00:38:35] SKIP: sxhkd
+[00:38:35] SKIP: dmenu
+[00:38:35] SKIP: picom
+[00:38:35] SKIP: alacritty
+[00:38:35] INFO: Installing: rofi st
+Loading repository data...
+Reading installed packages...
+Resolving package dependencies...
+
+The following 2 NEW packages are going to be installed:
+  rofi st
+
+2 new packages to install.
+
+Package download size:   686.1 KiB
+
+Package install size change:
+              |       1.2 MiB  required by packages that will be installed
+     1.2 MiB  |  -      0 B    released by packages that will be removed
+
+Backend:  classic_rpmtrans
+Continue? [y/n/v/...? shows all options] (y): y
+Preloading Packages [..
+Preloading: st-0.9-2.8.x86_64.rpm [done]
+...
+Preloading: rofi-2.0.0-1.1.x86_64.rpm [done]
+.done]
+Retrieving: rofi-2.0.0-1.1.x86_64 (openSUSE-Tumbleweed-Oss) (1/2), 627.2 KiB    
+Retrieving: st-0.9-2.8.x86_64 (openSUSE-Tumbleweed-Oss) (2/2),  58.9 KiB    
+
+Checking for file conflicts: [..done]
+(1/2) Installing: rofi-2.0.0-1.1.x86_64 [..done]
+(2/2) Installing: st-0.9-2.8.x86_64 [..done]
+Running post-transaction scripts [....done]
+[00:38:51] INFO: --- Syncing configs to chezmoi source ---
+[00:38:51] INFO: Chezmoi source: /home/marin/.local/share/chezmoi
+'/home/marin/Code/dotfiles/dot_config/bspwm/executable_bspwmrc' -> '/home/marin/.local/share/chezmoi/dot_config/bspwm/executable_bspwmrc'
+[00:38:51] OK: bspwm config synced to chezmoi source
+'/home/marin/Code/dotfiles/dot_config/sxhkd/sxhkdrc' -> '/home/marin/.local/share/chezmoi/dot_config/sxhkd/sxhkdrc'
+[00:38:51] OK: sxhkd config synced to chezmoi source
+'/home/marin/Code/dotfiles/dot_config/rofi/config.rasi' -> '/home/marin/.local/share/chezmoi/dot_config/rofi/config.rasi'
+[00:38:51] OK: rofi config synced to chezmoi source
+[00:38:51] INFO: --- Applying configs via chezmoi ---
+[00:38:51] OK: chezmoi apply ~/.config/bspwm
+[00:38:51] OK: chezmoi apply ~/.config/sxhkd
+[00:38:51] OK: chezmoi apply ~/.config/rofi
+chezmoi: /home/marin/.local/bin/sxhkd-help: not managed

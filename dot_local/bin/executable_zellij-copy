@@ -1,21 +1,22 @@
 #!/bin/sh
 
 # Cross-platform clipboard helper for Zellij.
-# Tries platform-specific utilities in priority order and falls back
-# to saving the buffer to a file if none are available.
+# Zellij pipes selected text to this script via stdin.
+# Tries platform-specific clipboard tools in priority order
+# and falls back to saving the buffer to a file.
 
 set -eu
 
 if command -v pbcopy >/dev/null 2>&1; then
-    exec pbcopy "$@"
+    exec pbcopy
 elif command -v wl-copy >/dev/null 2>&1 && { [ -n "${WAYLAND_DISPLAY-}" ] || [ "${XDG_SESSION_TYPE-}" = "wayland" ]; }; then
-    exec wl-copy "$@"
+    exec wl-copy
 elif command -v xclip >/dev/null 2>&1 && [ -n "${DISPLAY-}" ]; then
-    exec xclip -selection clipboard "$@"
+    exec xclip -selection clipboard
 elif command -v xsel >/dev/null 2>&1 && [ -n "${DISPLAY-}" ]; then
-    exec xsel --clipboard "$@"
+    exec xsel --clipboard --input
 else
     tmp_file="${TMPDIR:-/tmp}/zellij-copy-buffer"
     cat >"$tmp_file"
-    printf '%s\n' "zellij-copy: saved selection to ${tmp_file} (no clipboard program found)" >&2
+    printf '%s\n' "zellij-copy: no clipboard tool found, saved to ${tmp_file}" >&2
 fi

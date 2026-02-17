@@ -1,0 +1,79 @@
+/* Nord theme for rofi */
+
+configuration {
+    modi: "drun,window,run";
+    show-icons: true;
+    font: "IosevkaNerdFont 13";
+    display-drun: "Apps";
+    display-window: "Windows";
+    display-run: "Run";
+}
+
+* {
+    bg:       #2e3440;
+    bg-alt:   #3b4252;
+    fg:       #eceff4;
+    fg-alt:   #4c566a;
+    accent:   #88c0d0;
+    urgent:   #bf616a;
+
+    background-color: @bg;
+    text-color:       @fg;
+}
+
+window {
+    width:            500px;
+    border:           2px;
+    border-color:     @accent;
+    border-radius:    8px;
+    padding:          0;
+}
+
+mainbox {
+    padding:  0;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    padding:          12px;
+    background-color: @bg-alt;
+    children:         [ prompt, entry ];
+    spacing:          8px;
+}
+
+prompt {
+    text-color:       @accent;
+    background-color: inherit;
+}
+
+entry {
+    placeholder:       "Search...";
+    placeholder-color: @fg-alt;
+    background-color:  inherit;
+}
+
+listview {
+    lines:            8;
+    padding:          4px 0;
+    scrollbar:        false;
+    fixed-height:     false;
+}
+
+element {
+    padding:          8px 12px;
+    spacing:          8px;
+}
+
+element selected {
+    background-color: @accent;
+    text-color:       @bg;
+    border-radius:    4px;
+}
+
+element-icon {
+    size: 24px;
+}
+
+element-text {
+    vertical-align: 0.5;
+}
