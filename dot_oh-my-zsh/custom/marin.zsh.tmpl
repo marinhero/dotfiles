@@ -3,6 +3,11 @@
 set -o vi
 set bell-style none
 
+#------------ASDF VERSION MANAGER-----
+# asdf v0.16+ shims must be first in PATH so they take priority over system binaries
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+
 #------------ALIAS (Shared)------------
 
 alias blog='cd ~/Code/marinhero.github.io'
@@ -16,7 +21,7 @@ alias gra='git reset --soft HEAD@{1}'
 alias gri='git fetch && git rebase -i origin/master'
 alias gs='git status'
 alias l='ls -l'
-alias ne='vim'
+alias ne='nvim'
 alias pom='git pull origin master --rebase'
 alias vim='nvim'
 alias vimrc='vim ~/.vimrc'
@@ -83,11 +88,11 @@ goto() {
   fi
 
   dir="$HOME/Code/$repo"
-  if [ -d $dir ]
+  if [ -d "$dir" ]
   then
-    cd $dir
+    cd "$dir"
   else
-    git clone "git@github.com:/marinhero/$repo" $dir && cd $dir
+    git clone "git@github.com:marinhero/$repo" "$dir" && cd "$dir"
   fi
 }
 {{- end }}
@@ -137,7 +142,7 @@ function claude-bedrock() {
 
   # Check if cache file exists and is recent
   if [[ -f "$cache_file" ]] && \
-     [[ $(($current_time - $(stat -f %m "$cache_file"))) -lt $cache_timeout ]]; then
+     [[ $(($current_time - $(date -r "$cache_file" +%s))) -lt $cache_timeout ]]; then
     # Use cached data
     model_map=$(cat "$cache_file")
     # Verify cache contains valid JSON
@@ -209,7 +214,6 @@ function claude-bedrock() {
   claude
 }
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 {{- end }}
 
 {{- if .is_desktop }}
@@ -219,3 +223,36 @@ function claude-bedrock() {
 {{- if .is_personal_laptop }}
 # Personal laptop-specific functions and configuration
 {{- end }}
+
+#------------FZF-----------------
+# Source fzf key-bindings (Ctrl-R history search, Ctrl-T file search, Alt-C cd)
+# and completions. Check asdf install first, then platform-specific fallbacks.
+_fzf_sourced=0
+
+# asdf-managed fzf
+if command -v asdf &>/dev/null; then
+  _fzf_asdf_dir="$(asdf where fzf 2>/dev/null)/shell"
+  if [[ -d "$_fzf_asdf_dir" ]]; then
+    [[ -f "$_fzf_asdf_dir/key-bindings.zsh" ]] && source "$_fzf_asdf_dir/key-bindings.zsh"
+    [[ -f "$_fzf_asdf_dir/completion.zsh" ]]   && source "$_fzf_asdf_dir/completion.zsh"
+    _fzf_sourced=1
+  fi
+  unset _fzf_asdf_dir
+fi
+
+# Fallback to system install
+if (( ! _fzf_sourced )); then
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    for fzf_dir in /opt/homebrew/opt/fzf /usr/local/opt/fzf; do
+      if [[ -d "$fzf_dir/shell" ]]; then
+        [[ -f "$fzf_dir/shell/key-bindings.zsh" ]] && source "$fzf_dir/shell/key-bindings.zsh"
+        [[ -f "$fzf_dir/shell/completion.zsh" ]]   && source "$fzf_dir/shell/completion.zsh"
+        break
+      fi
+    done
+  else
+    [[ -f /usr/share/fzf/shell/key-bindings.zsh ]] && source /usr/share/fzf/shell/key-bindings.zsh
+    [[ -f /usr/share/fzf/shell/completion.zsh ]]   && source /usr/share/fzf/shell/completion.zsh
+  fi
+fi
+unset _fzf_sourced

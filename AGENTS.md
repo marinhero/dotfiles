@@ -50,8 +50,7 @@ Chezmoi uses special prefixes:
   - macOS clipboard integration via `pbcopy`
 
 ### Editors
-- **vim** (`dot_vimrc`) - Classic Vim configuration
-- **neovim** (`dot_config/nvim/init.vim`) - Modern Neovim setup
+- **vim/neovim** (`dot_vimrc`) - Shared Vim configuration (neovim sources it via LazyVim)
 
 ### Git
 - **gitconfig** (`dot_gitconfig`) - Git global configuration

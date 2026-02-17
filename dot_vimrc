@@ -23,7 +23,6 @@ call plug#begin()
   Plug 'junegunn/fzf.vim'
   Plug 'szw/vim-smartclose'
   Plug 'whiteinge/diffconflicts'
-  Plug 'ayu-theme/ayu-vim'
   Plug 'mbbill/undotree'
   Plug 'Yggdroot/indentLine'
 call plug#end()
@@ -64,7 +63,7 @@ highlight OverLength ctermbg=red ctermfg=white guibg=#592929
 
 if has("persistent_undo")
   set undofile
-  set undodir=/Users/marin/.vim/undo
+  set undodir=$HOME/.vim/undo
 endif
 
 let mapleader = ","
@@ -164,5 +163,5 @@ if executable('ag')
   set grepprg=ag\ --nogroup\ --nocolor
 endif
 
-set rtp+=/usr/local/opt/fzf
+" fzf installed via vim-plug — rtp handled automatically
 

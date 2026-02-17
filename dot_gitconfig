@@ -36,6 +36,9 @@
 [branch "master"]
   rebase = "true"
 
+[branch "main"]
+  rebase = "true"
+
 [branch]
   autosetuprebase=always
 [core]

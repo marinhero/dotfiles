@@ -1,4 +1,33 @@
+# Editors
 .*.sw*
-.DS_STORE
-*.orig
+*.un~
+*~
 .idea
+.vscode
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Merge artifacts
+*.orig
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
