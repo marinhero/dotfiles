@@ -21,7 +21,7 @@ copy_on_select true
 // default_layout "/path/to/layout"
 
 // Enable automatic pane frames
-pane_frames true
+pane_frames false
 
 // Theme choice
 theme "nord"
@@ -74,6 +74,7 @@ keybinds clear-defaults=true {
         bind "Alt -" { Resize "Decrease"; }
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
+        bind "Alt f" { ToggleFocusFullscreen; }
     }
 
     // Locked mode (passthrough all keys to terminal)
@@ -218,9 +219,7 @@ keybinds clear-defaults=true {
         bind "Alt -" { Resize "Decrease"; }
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
-        bind "Ctrl Shift f" { ToggleFocusFullscreen; }
-        bind "Ctrl Shift p" { TogglePaneFrames; }
-        bind "Ctrl Shift b" { BreakPane; }
+        bind "Alt f" { ToggleFocusFullscreen; }
     }
 
     shared_except "normal" "locked" {

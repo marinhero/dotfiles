@@ -3,6 +3,32 @@
 set -o vi
 set bell-style none
 
+#------------BLACK + NORD COLORS (st terminal)--
+if [ "$TERM" = "st-256color" ]; then
+  # Background/foreground/cursor
+  printf '\033]11;#000000\033\\'
+  printf '\033]10;#d8dee9\033\\'
+  printf '\033]12;#d8dee9\033\\'
+  # Normal colors
+  printf '\033]4;0;#000000\033\\'
+  printf '\033]4;1;#bf616a\033\\'
+  printf '\033]4;2;#a3be8c\033\\'
+  printf '\033]4;3;#ebcb8b\033\\'
+  printf '\033]4;4;#81a1c1\033\\'
+  printf '\033]4;5;#b48ead\033\\'
+  printf '\033]4;6;#88c0d0\033\\'
+  printf '\033]4;7;#e5e9f0\033\\'
+  # Bright colors
+  printf '\033]4;8;#4c566a\033\\'
+  printf '\033]4;9;#bf616a\033\\'
+  printf '\033]4;10;#a3be8c\033\\'
+  printf '\033]4;11;#ebcb8b\033\\'
+  printf '\033]4;12;#81a1c1\033\\'
+  printf '\033]4;13;#b48ead\033\\'
+  printf '\033]4;14;#8fbcbb\033\\'
+  printf '\033]4;15;#eceff4\033\\'
+fi
+
 #------------ASDF VERSION MANAGER-----
 # asdf v0.16+ shims must be first in PATH so they take priority over system binaries
 export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
