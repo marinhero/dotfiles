@@ -69,9 +69,13 @@ super + x
 super + shift + x
 	lock-screen && systemctl suspend
 
-# Screenshot
+# Screenshot (full → file, path to clipboard)
 Print
-	scrot ~/Pictures/screenshot_%Y-%m-%d_%H%M%S.png
+	scrot ~/Pictures/screenshot_%Y-%m-%d_%H%M%S.png -e 'echo -n $f | xclip -selection clipboard'
+
+# Screenshot (selection → file, path to clipboard)
+super + Print
+	scrot -s ~/Pictures/screenshot_%Y-%m-%d_%H%M%S.png -e 'echo -n $f | xclip -selection clipboard'
 
 # -----------------------------------------------------------
 # Layout

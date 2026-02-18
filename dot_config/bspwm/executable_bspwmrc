@@ -72,8 +72,10 @@ bspc rule -a File-roller state=floating
 # Remap Caps Lock to Ctrl
 setxkbmap -option ctrl:nocaps &
 
-# Set cursor
+# Set cursor theme
 xsetroot -cursor_name left_ptr &
+xrdb -merge <<< 'Xcursor.theme: Nordzy-cursors
+Xcursor.size: 24' &
 
 # Clipboard manager
 pgrep -x greenclip > /dev/null || greenclip daemon &

@@ -3,6 +3,11 @@
 set -o vi
 set bell-style none
 
+#------------FASTFETCH-----------------
+if command -v fastfetch &>/dev/null && [[ -z "$ZELLIJ" ]]; then
+  fastfetch
+fi
+
 #------------BLACK + NORD COLORS (st terminal)--
 if [ "$TERM" = "st-256color" ]; then
   # Background/foreground/cursor
