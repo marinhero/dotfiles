@@ -3,7 +3,7 @@
 # Dotfiles setup script for macOS and openSUSE Linux.
 # Installs all required tools and applies chezmoi-managed configs.
 #
-# Tools managed by asdf: neovim, fzf, chezmoi, jq, zellij, golang, python, nodejs
+# Tools managed by asdf: neovim, fzf, chezmoi, jq, zellij, golang, python, nodejs, deno
 # Tools kept native:     zsh, vim, git, git-lfs, curl, btop, ag, shellcheck,
 #                        clipboard utils, flatpak
 # Other tools:           Claude Code, OpenCode, bibletui, Iosevka Nerd Font,
@@ -332,6 +332,7 @@ install_asdf_tools() {
     golang
     python
     nodejs
+    deno
   )
 
   local bin pkgs
