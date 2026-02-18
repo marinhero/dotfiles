@@ -42,19 +42,38 @@ Chezmoi uses special prefixes:
 
 ## Current Configurations
 
+### Desktop Environment (Linux)
+- **bspwm** (`dot_config/bspwm/`) — Tiling window manager with Nord-themed borders
+- **sxhkd** (`dot_config/sxhkd/`) — Hotkey daemon (vim-style + macOS-inspired)
+- **polybar** (`dot_config/polybar/`) — Status bar (black+Nord theme)
+- **rofi** (`dot_config/rofi/`) — App launcher, window switcher, clipboard, web search
+- **picom** — Compositor (launched from bspwmrc)
+
 ### Shell & Terminal
-- **oh-my-zsh** (`dot_oh-my-zsh/`) - Zsh framework and configuration
-- **zellij** (`dot_config/zellij/config.kdl`) - Terminal multiplexer
-  - Modal keybindings (Ctrl+p, Ctrl+t, Ctrl+n, etc.)
-  - Multiple themes (Catppuccin Mocha, Dracula, Gruvbox, Nord, Tokyo Night)
-  - macOS clipboard integration via `pbcopy`
+- **st** (suckless terminal) — Launched via `st-wrapper` with Iosevka Nerd Font
+- **oh-my-zsh** (`dot_oh-my-zsh/`) — Zsh framework with vi mode, black+Nord colors via escape sequences
+- **zellij** (`dot_config/zellij/config.kdl.tmpl`) — Terminal multiplexer (Nord theme, modal keybinds)
 
 ### Editors
-- **vim/neovim** (`dot_vimrc`) - Shared Vim configuration (neovim sources it via LazyVim)
+- **Neovim** (`dot_config/nvim/`) — LazyVim distribution with Claude Code plugin
+- **Vim** (`dot_vimrc`) — Legacy vim-plug configuration
+
+### Custom Scripts (`dot_local/bin/`)
+- `st-wrapper` — st with Iosevka Nerd Font Mono size 17
+- `web-search` — Rofi → DuckDuckGo search
+- `lock-screen` — Screenshot → blur → i3lock
+- `random-wallpaper` — Random wallpaper from `~/Code/nordic-wallpapers/wallpapers/`
+- `wallpaper-exclude` / `wallpaper-favorite` — Wallpaper management
+- `sxhkd-help` — Keybinding cheatsheet via rofi
+- `zellij-copy` — Clipboard helper for zellij
 
 ### Git
-- **gitconfig** (`dot_gitconfig`) - Git global configuration
-- **gitignore_global** (`dot_gitignore_global`) - Global ignore patterns
+- **gitconfig** (`dot_gitconfig`) — Git global configuration
+- **gitignore_global** (`dot_gitignore_global`) — Global ignore patterns
+
+### Theme
+Black background (`#000000`) with Nord accent colors across all components.
+Font: Iosevka Nerd Font Mono (fontconfig family name with spaces).
 
 ## How to Work with This Repository
 
