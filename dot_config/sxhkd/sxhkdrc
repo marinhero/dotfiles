@@ -49,12 +49,12 @@ super + r
 super + shift + r
 	bspc wm -r
 
-# Lock screen (Ctrl+Cmd+L)
-super + ctrl + l
+# Lock screen
+super + x
 	i3lock -c 2e3440
 
 # Sleep (lock then suspend)
-super + ctrl + s
+super + shift + x
 	i3lock -c 2e3440 && systemctl suspend
 
 # Screenshot
