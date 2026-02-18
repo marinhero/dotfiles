@@ -233,7 +233,7 @@ verify() {
   local fail=0
 
   # Check binaries
-  for bin in bspwm bspc sxhkd dmenu rofi st picom alacritty polybar; do
+  for bin in bspwm bspc sxhkd dmenu rofi st picom alacritty polybar i3lock; do
     if command -v "$bin" &>/dev/null; then
       ok "binary: $bin ($(command -v "$bin"))"
       ((pass++))
@@ -365,8 +365,7 @@ main() {
   info "  super + /            → keybinding cheatsheet"
   info "  super + space        → app launcher (Alfred-style)"
   info "  super + Tab          → window switcher (Cmd+Tab style)"
-  info "  super + Return       → terminal (alacritty)"
-  info "  super + shift+Return → terminal (st)"
+  info "  super + Return       → terminal (st)"
   info "  super + {h,j,k,l}   → focus window (vim-style)"
   info "  super + {1-9,0}     → switch desktop"
   info "  super + w            → close window"
