@@ -25,6 +25,10 @@ alt + {_,shift + }Tab
 super + v
 	rofi -modi "clipboard:greenclip print" -show clipboard -run-command '{cmd}'
 
+# Web search (Alfred-style)
+super + s
+	web-search
+
 # Keybinding cheatsheet
 super + slash
 	sxhkd-help
@@ -57,13 +61,13 @@ super + r
 super + shift + r
 	bspc wm -r
 
-# Lock screen
+# Lock screen (blurred screenshot)
 super + x
-	i3lock -c 2e3440
+	lock-screen
 
 # Sleep (lock then suspend)
 super + shift + x
-	i3lock -c 2e3440 && systemctl suspend
+	lock-screen && systemctl suspend
 
 # Screenshot
 Print

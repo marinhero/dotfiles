@@ -1,17 +1,20 @@
-/* Nord theme for rofi */
+/* Disable default theme */
+@theme "/dev/null"
+
+/* Black + Nord theme for rofi */
 
 configuration {
     modi: "drun,window,run";
     show-icons: true;
-    font: "IosevkaNerdFont 13";
+    font: "Iosevka Nerd Font Mono 15";
     display-drun: "Apps";
     display-window: "Windows";
     display-run: "Run";
 }
 
 * {
-    bg:       #2e3440;
-    bg-alt:   #3b4252;
+    bg:       #000000;
+    bg-alt:   #111111;
     fg:       #eceff4;
     fg-alt:   #4c566a;
     accent:   #88c0d0;
@@ -50,6 +53,7 @@ entry {
     placeholder:       "Search...";
     placeholder-color: @fg-alt;
     background-color:  inherit;
+    text-color:        #ffffff;
 }
 
 listview {
@@ -57,14 +61,17 @@ listview {
     padding:          4px 0;
     scrollbar:        false;
     fixed-height:     false;
+    background-color: @bg;
 }
 
 element {
     padding:          8px 12px;
     spacing:          8px;
+    background-color: @bg;
+    text-color:       @fg;
 }
 
-element selected {
+element selected.normal, element selected.active {
     background-color: @accent;
     text-color:       @bg;
     border-radius:    4px;
@@ -72,8 +79,11 @@ element selected {
 
 element-icon {
     size: 24px;
+    background-color: inherit;
 }
 
 element-text {
     vertical-align: 0.5;
+    background-color: inherit;
+    text-color:       inherit;
 }

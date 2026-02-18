@@ -1,0 +1,7 @@
+#!/bin/sh
+# Screenshot, blur, and lock
+tmpimg=$(mktemp /tmp/lock-XXXX.png)
+scrot -o "$tmpimg"
+convert "$tmpimg" -blur 0x8 "$tmpimg"
+i3lock -i "$tmpimg"
+rm -f "$tmpimg"

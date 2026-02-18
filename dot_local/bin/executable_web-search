@@ -1,0 +1,3 @@
+#!/bin/sh
+query=$(rofi -dmenu -p "Search" -theme-str 'listview { enabled: false; }')
+[ -n "$query" ] && xdg-open "https://duckduckgo.com/?q=$(printf '%s' "$query" | sed 's/ /+/g')"
