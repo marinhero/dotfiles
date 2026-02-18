@@ -73,6 +73,10 @@ Print
 # Layout
 # -----------------------------------------------------------
 
+# Toggle gaps
+super + equal
+	if [ "$(bspc config window_gap)" -eq 0 ]; then bspc config window_gap 10; else bspc config window_gap 0; fi
+
 # Toggle monocle/tiled layout
 super + m
 	bspc desktop -l next
