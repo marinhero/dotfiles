@@ -75,7 +75,7 @@ Print
 
 # Toggle gaps
 super + equal
-	if [ "$(bspc config window_gap)" -eq 0 ]; then bspc config window_gap 10; else bspc config window_gap 0; fi
+	if [ "$(bspc config window_gap)" -eq 0 ]; then bspc config window_gap 10; bspc config top_padding 32; polybar-msg cmd show; else bspc config window_gap 0; bspc config top_padding 0; polybar-msg cmd hide; fi
 
 # Toggle monocle/tiled layout
 super + m
