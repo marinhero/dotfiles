@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=st
+Comment=Simple Terminal
+Exec=st-wrapper
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=System;TerminalEmulator;

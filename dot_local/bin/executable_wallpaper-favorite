@@ -1,0 +1,12 @@
+#!/bin/sh
+# Favorite the current wallpaper
+current=$(grep -oP "(?<=')[^']+(?=')" ~/.fehbg 2>/dev/null)
+[ -z "$current" ] && exit 1
+
+mkdir -p ~/.config/wallpaper
+if grep -qxF "$current" ~/.config/wallpaper/favorites 2>/dev/null; then
+  notify-send "Already favorited" "$(basename "$current")"
+else
+  echo "$current" >> ~/.config/wallpaper/favorites
+  notify-send "Wallpaper favorited" "$(basename "$current")"
+fi

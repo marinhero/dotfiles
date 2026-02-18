@@ -34,4 +34,4 @@ awk '
   -p "Keybindings" \
   -theme-str 'window { width: 700px; }' \
   -theme-str 'listview { lines: 20; }' \
-  -no-custom
+  -no-custom || true

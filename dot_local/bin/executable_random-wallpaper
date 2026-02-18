@@ -1,0 +1,11 @@
+#!/bin/sh
+WALLPAPER_DIR="$HOME/Code/nordic-wallpapers/wallpapers"
+EXCLUDE_FILE="$HOME/.config/wallpaper/excluded"
+
+[ -d "$WALLPAPER_DIR" ] || exit 0
+
+wallpaper=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' -o -name '*.webp' \) \
+  | { [ -f "$EXCLUDE_FILE" ] && grep -vxFf "$EXCLUDE_FILE" || cat; } \
+  | shuf -n 1)
+
+[ -n "$wallpaper" ] && DISPLAY=:0 feh --bg-fill "$wallpaper"

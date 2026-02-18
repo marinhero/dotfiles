@@ -229,6 +229,9 @@ install_packages_zypper() {
     btop
     unzip
     ShellCheck
+    playerctl
+    brightnessctl
+    polybar
 
     # build dependencies (needed by asdf to compile python from source)
     gcc

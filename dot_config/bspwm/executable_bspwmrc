@@ -20,7 +20,7 @@ bspc monitor -d 1 2 3 4 5 6 7 8 9 0
 bspc config border_width         2
 bspc config window_gap           10
 
-bspc config top_padding          0
+bspc config top_padding          32
 bspc config bottom_padding       0
 bspc config left_padding         0
 bspc config right_padding        0
@@ -66,11 +66,14 @@ bspc rule -a File-roller state=floating
 # Autostart
 # -----------------------------------------------------------
 
-# Set wallpaper (uncomment and set your wallpaper path)
-# feh --bg-fill ~/Pictures/wallpaper.jpg &
+# Random wallpaper
+~/.local/bin/random-wallpaper &
 
 # Remap Caps Lock to Ctrl
 setxkbmap -option ctrl:nocaps &
 
 # Set cursor
 xsetroot -cursor_name left_ptr &
+
+# Status bar
+~/.config/polybar/launch.sh &

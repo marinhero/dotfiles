@@ -1,0 +1,2 @@
+#!/bin/sh
+exec st -f 'Iosevka Nerd Font Mono:size=17' "$@"

@@ -70,6 +70,9 @@ install_packages() {
     st
     picom
     alacritty
+    playerctl
+    brightnessctl
+    polybar
   )
 
   local missing=()
@@ -140,6 +143,20 @@ sync_configs() {
   chown -R "$(target_user):" "$dst_sxhkd"
   ok "sxhkd config synced to chezmoi source"
 
+  # polybar config
+  local src_polybar="$DOTFILES_DIR/dot_config/polybar"
+  local dst_polybar="$chezmoi_src/dot_config/polybar"
+
+  if [[ ! -d "$src_polybar" ]]; then
+    error "polybar config not found at $src_polybar"
+    exit 1
+  fi
+
+  run_as_user "mkdir -p '$dst_polybar'"
+  cp -v "$src_polybar"/* "$dst_polybar/" 2>&1 | tee -a "$LOG_FILE"
+  chown -R "$(target_user):" "$dst_polybar"
+  ok "polybar config synced to chezmoi source"
+
   # rofi config
   local src_rofi="$DOTFILES_DIR/dot_config/rofi"
   local dst_rofi="$chezmoi_src/dot_config/rofi"
@@ -149,6 +166,28 @@ sync_configs() {
     cp -v "$src_rofi"/* "$dst_rofi/" 2>&1 | tee -a "$LOG_FILE"
     chown -R "$(target_user):" "$dst_rofi"
     ok "rofi config synced to chezmoi source"
+  fi
+
+  # helper scripts (sxhkd-help, st-wrapper, etc.)
+  local src_bin="$DOTFILES_DIR/dot_local/bin"
+  local dst_bin="$chezmoi_src/dot_local/bin"
+
+  if [[ -d "$src_bin" ]]; then
+    run_as_user "mkdir -p '$dst_bin'"
+    cp -v "$src_bin"/* "$dst_bin/" 2>&1 | tee -a "$LOG_FILE"
+    chown -R "$(target_user):" "$dst_bin"
+    ok "helper scripts synced to chezmoi source"
+  fi
+
+  # desktop entries (st-wrapper launcher, etc.)
+  local src_apps="$DOTFILES_DIR/dot_local/share/applications"
+  local dst_apps="$chezmoi_src/dot_local/share/applications"
+
+  if [[ -d "$src_apps" ]]; then
+    run_as_user "mkdir -p '$dst_apps'"
+    cp -v "$src_apps"/* "$dst_apps/" 2>&1 | tee -a "$LOG_FILE"
+    chown -R "$(target_user):" "$dst_apps"
+    ok "desktop entries synced to chezmoi source"
   fi
 }
 
@@ -163,12 +202,23 @@ apply_configs() {
   run_as_user "chezmoi apply ~/.config/sxhkd" 2>&1 | tee -a "$LOG_FILE"
   ok "chezmoi apply ~/.config/sxhkd"
 
+  run_as_user "chezmoi apply ~/.config/polybar" 2>&1 | tee -a "$LOG_FILE"
+  ok "chezmoi apply ~/.config/polybar"
+
   run_as_user "chezmoi apply ~/.config/rofi" 2>&1 | tee -a "$LOG_FILE"
   ok "chezmoi apply ~/.config/rofi"
 
-  # Deploy sxhkd-help script
+  # Deploy helper scripts
   run_as_user "chezmoi apply ~/.local/bin/sxhkd-help" 2>&1 | tee -a "$LOG_FILE"
   ok "chezmoi apply ~/.local/bin/sxhkd-help"
+
+  run_as_user "chezmoi apply ~/.local/bin/st-wrapper" 2>&1 | tee -a "$LOG_FILE"
+  ok "chezmoi apply ~/.local/bin/st-wrapper"
+
+  # Deploy desktop entries
+  run_as_user "mkdir -p ~/.local/share/applications"
+  run_as_user "chezmoi apply ~/.local/share/applications" 2>&1 | tee -a "$LOG_FILE"
+  ok "chezmoi apply ~/.local/share/applications"
 }
 
 # ---------- verify ----------
@@ -182,7 +232,7 @@ verify() {
   local fail=0
 
   # Check binaries
-  for bin in bspwm bspc sxhkd dmenu rofi st picom alacritty; do
+  for bin in bspwm bspc sxhkd dmenu rofi st picom alacritty polybar; do
     if command -v "$bin" &>/dev/null; then
       ok "binary: $bin ($(command -v "$bin"))"
       ((pass++))
@@ -212,6 +262,66 @@ verify() {
     ((pass++))
   else
     warn "config: $sxhkdrc NOT FOUND"
+    ((fail++))
+  fi
+
+  # Check polybar config exists
+  local polybar_config="$home_dir/.config/polybar/config.ini"
+  if [[ -f "$polybar_config" ]]; then
+    ok "config: $polybar_config"
+    ((pass++))
+  else
+    warn "config: $polybar_config NOT FOUND"
+    ((fail++))
+  fi
+
+  # Check polybar launch script exists and is executable
+  local polybar_launch="$home_dir/.config/polybar/launch.sh"
+  if [[ -x "$polybar_launch" ]]; then
+    ok "script: $polybar_launch (executable)"
+    ((pass++))
+  else
+    warn "script: $polybar_launch NOT FOUND or not executable"
+    ((fail++))
+  fi
+
+  # Check rofi config exists
+  local rofi_config="$home_dir/.config/rofi/config.rasi"
+  if [[ -f "$rofi_config" ]]; then
+    ok "config: $rofi_config"
+    ((pass++))
+  else
+    warn "config: $rofi_config NOT FOUND"
+    ((fail++))
+  fi
+
+  # Check sxhkd-help exists and is executable
+  local sxhkd_help="$home_dir/.local/bin/sxhkd-help"
+  if [[ -x "$sxhkd_help" ]]; then
+    ok "script: $sxhkd_help (executable)"
+    ((pass++))
+  else
+    warn "script: $sxhkd_help NOT FOUND or not executable"
+    ((fail++))
+  fi
+
+  # Check st-wrapper exists and is executable
+  local st_wrapper="$home_dir/.local/bin/st-wrapper"
+  if [[ -x "$st_wrapper" ]]; then
+    ok "script: $st_wrapper (executable)"
+    ((pass++))
+  else
+    warn "script: $st_wrapper NOT FOUND or not executable"
+    ((fail++))
+  fi
+
+  # Check st desktop entry exists
+  local st_desktop="$home_dir/.local/share/applications/st.desktop"
+  if [[ -f "$st_desktop" ]]; then
+    ok "desktop: $st_desktop"
+    ((pass++))
+  else
+    warn "desktop: $st_desktop NOT FOUND"
     ((fail++))
   fi
 
@@ -250,17 +360,17 @@ main() {
   info "  2. At the login screen, select 'bspwm' as your session"
   info "  3. Log back in"
   info ""
-  info "Key bindings:"
-  info "  super + /            → keybinding cheatsheet (rofi)"
+  info "Key bindings (super = Cmd-style modifier):"
+  info "  super + /            → keybinding cheatsheet"
+  info "  super + space        → app launcher (Alfred-style)"
+  info "  super + Tab          → window switcher (Cmd+Tab style)"
   info "  super + Return       → terminal (alacritty)"
   info "  super + shift+Return → terminal (st)"
-  info "  super + d            → app launcher (rofi)"
-  info "  super + space        → window switcher (rofi)"
-  info "  super + {h,j,k,l}   → focus window"
+  info "  super + {h,j,k,l}   → focus window (vim-style)"
   info "  super + {1-9,0}     → switch desktop"
-  info "  super + shift + w    → kill window"
-  info "  super + alt + r      → restart bspwm"
-  info "  super + Escape       → reload keybindings"
+  info "  super + w            → close window"
+  info "  super + r            → reload keybindings"
+  info "  super + shift + r    → restart bspwm"
   info ""
   info "Full log: $LOG_FILE"
 }

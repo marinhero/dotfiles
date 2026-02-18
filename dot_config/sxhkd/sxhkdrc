@@ -1,12 +1,25 @@
 # -----------------------------------------------------------
 # sxhkd configuration for bspwm
 # -----------------------------------------------------------
-# super = Mod4 (Windows/Command key)
+# Designed around: vim navigation + macOS-style mnemonics + Alfred launcher
+# super (Mod4) = primary modifier, like Cmd on macOS
 # -----------------------------------------------------------
 
 # -----------------------------------------------------------
-# Applications
+# Launcher & Apps
 # -----------------------------------------------------------
+
+# App launcher (Alfred-style)
+super + space
+	rofi -show drun -show-icons
+
+# Window switcher (Cmd+Tab style)
+super + Tab
+	rofi -show window -show-icons
+
+# Keybinding cheatsheet
+super + slash
+	sxhkd-help
 
 # Terminal (alacritty)
 super + Return
@@ -14,132 +27,224 @@ super + Return
 
 # Terminal (st)
 super + shift + Return
-	st
-
-# App launcher (rofi)
-super + d
-	rofi -show drun -show-icons
-
-# Window switcher (rofi)
-super + space
-	rofi -show window -show-icons
-
-# Keybinding cheatsheet
-super + slash
-	sxhkd-help
+	st-wrapper
 
 # -----------------------------------------------------------
-# bspwm hotkeys
+# Window management (macOS-inspired)
 # -----------------------------------------------------------
 
-# Quit/restart bspwm
-super + alt + {q,r}
-	bspc {quit,wm -r}
+# Close window (Cmd+W)
+super + w
+	bspc node -c
 
-# Close/kill window
-super + {_,shift + }w
-	bspc node -{c,k}
+# Kill window (Cmd+Shift+W)
+super + shift + w
+	bspc node -k
 
-# Alternate between tiled and monocle layout
+# Quit bspwm (Cmd+Shift+Q)
+super + shift + q
+	bspc quit
+
+# Reload keybindings
+super + r
+	pkill -USR1 -x sxhkd
+
+# Restart bspwm
+super + shift + r
+	bspc wm -r
+
+# Lock screen (Ctrl+Cmd+L)
+super + ctrl + l
+	i3lock -c 2e3440
+
+# Screenshot
+Print
+	scrot ~/Pictures/screenshot_%Y-%m-%d_%H%M%S.png
+
+# -----------------------------------------------------------
+# Layout
+# -----------------------------------------------------------
+
+# Toggle monocle/tiled layout
 super + m
 	bspc desktop -l next
 
-# Send newest marked node to newest preselected node
-super + y
-	bspc node newest.marked.local -n newest.!automatic.local
+# Fullscreen
+super + f
+	bspc node -t fullscreen
 
-# Swap current node with biggest window
-super + g
-	bspc node -s biggest.window
+# Floating toggle
+super + shift + f
+	bspc node -t floating
 
-# -----------------------------------------------------------
-# State and flags
-# -----------------------------------------------------------
+# Tiled
+super + t
+	bspc node -t tiled
 
-# Set window state
-super + {t,shift + t,s,f}
-	bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
-
-# Set node flags
-super + ctrl + {m,x,y,z}
-	bspc node -g {marked,locked,sticky,private}
+# Pseudo-tiled
+super + shift + t
+	bspc node -t pseudo_tiled
 
 # -----------------------------------------------------------
-# Focus and swap
+# Focus (vim-style)
 # -----------------------------------------------------------
 
-# Focus/swap node in direction
-super + {_,shift + }{h,j,k,l}
-	bspc node -{f,s} {west,south,north,east}
+# Focus window in direction
+super + {h,j,k,l}
+	bspc node -f {west,south,north,east}
 
-# Focus/swap node in direction (arrow keys)
-super + {_,shift + }{Left,Down,Up,Right}
-	bspc node -{f,s} {west,south,north,east}
+# Focus window in direction (arrow keys)
+super + {Left,Down,Up,Right}
+	bspc node -f {west,south,north,east}
 
-# Focus next/previous window in current desktop
-super + {_,shift + }c
+# Focus next/previous window in desktop
+super + {n,p}
 	bspc node -f {next,prev}.local.!hidden.window
 
-# Focus next/previous desktop in current monitor
+# Focus next/previous desktop
 super + bracket{left,right}
 	bspc desktop -f {prev,next}.local
 
-# Focus the last node/desktop
-super + {grave,Tab}
-	bspc {node,desktop} -f last
+# Focus last window
+super + grave
+	bspc node -f last
 
-# Focus or send to the given desktop
+# Focus or send to desktop
 super + {_,shift + }{1-9,0}
 	bspc {desktop -f,node -d} '^{1-9,10}'
+
+# -----------------------------------------------------------
+# Move & swap (vim-style + shift)
+# -----------------------------------------------------------
+
+# Swap window in direction
+super + shift + {h,j,k,l}
+	bspc node -s {west,south,north,east}
+
+# Swap window in direction (arrow keys)
+super + shift + {Left,Down,Up,Right}
+	bspc node -s {west,south,north,east}
+
+# Swap with biggest window
+super + g
+	bspc node -s biggest.window
+
+# Send marked to preselected
+super + y
+	bspc node newest.marked.local -n newest.!automatic.local
+
+# -----------------------------------------------------------
+# Resize (ctrl + vim keys)
+# -----------------------------------------------------------
+
+# Expand window
+super + ctrl + {h,j,k,l}
+	bspc node -z {left -20 0,bottom 0 20,top 0 -20,right 20 0}
+
+# Contract window
+super + ctrl + shift + {h,j,k,l}
+	bspc node -z {right -20 0,top 0 20,bottom 0 -20,left 20 0}
+
+# Move floating window
+super + ctrl + {Left,Down,Up,Right}
+	bspc node -v {-20 0,0 20,0 -20,20 0}
 
 # -----------------------------------------------------------
 # Preselect
 # -----------------------------------------------------------
 
-# Preselect direction
-super + ctrl + {h,j,k,l}
+# Preselect split direction
+super + alt + {h,j,k,l}
 	bspc node -p {west,south,north,east}
 
 # Preselect ratio
-super + ctrl + {1-9}
+super + alt + {1-9}
 	bspc node -o 0.{1-9}
 
-# Cancel preselection for focused node
-super + ctrl + space
+# Cancel preselection
+super + alt + space
 	bspc node -p cancel
 
-# Cancel preselection for focused desktop
-super + ctrl + shift + space
+# Cancel all preselections on desktop
+super + alt + shift + space
 	bspc query -N -d | xargs -I id -n 1 bspc node id -p cancel
 
 # -----------------------------------------------------------
-# Move and resize
+# Node flags
 # -----------------------------------------------------------
 
-# Expand a window by moving one of its sides outward
-super + alt + {h,j,k,l}
-	bspc node -z {left -20 0,bottom 0 20,top 0 -20,right 20 0}
+# Toggle marked
+super + shift + m
+	bspc node -g marked
 
-# Contract a window by moving one of its sides inward
-super + alt + shift + {h,j,k,l}
-	bspc node -z {right -20 0,top 0 20,bottom 0 -20,left 20 0}
+# Toggle sticky
+super + shift + s
+	bspc node -g sticky
 
-# Move a floating window
-super + {Left,Down,Up,Right}
-	bspc node -v {-20 0,0 20,0 -20,20 0}
+# Toggle locked
+super + shift + l
+	bspc node -g locked
+
+# Toggle private
+super + shift + p
+	bspc node -g private
 
 # -----------------------------------------------------------
-# Misc
+# Media keys
 # -----------------------------------------------------------
 
-# Reload sxhkd config
-super + Escape
-	pkill -USR1 -x sxhkd
+# Volume up
+XF86AudioRaiseVolume
+	pactl set-sink-volume @DEFAULT_SINK@ +5%
 
-# Screenshot (requires scrot or maim)
-Print
-	scrot ~/Pictures/screenshot_%Y-%m-%d_%H%M%S.png
+# Volume down
+XF86AudioLowerVolume
+	pactl set-sink-volume @DEFAULT_SINK@ -5%
 
-# Lock screen (requires i3lock or similar)
-super + shift + x
-	i3lock -c 2e3440
+# Mute
+XF86AudioMute
+	pactl set-sink-mute @DEFAULT_SINK@ toggle
+
+# Mic mute
+XF86AudioMicMute
+	pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# Play/pause
+XF86AudioPlay
+	playerctl play-pause
+
+# Next track
+XF86AudioNext
+	playerctl next
+
+# Previous track
+XF86AudioPrev
+	playerctl previous
+
+# Stop
+XF86AudioStop
+	playerctl stop
+
+# Brightness up
+XF86MonBrightnessUp
+	brightnessctl set +10%
+
+# Brightness down
+XF86MonBrightnessDown
+	brightnessctl set 10%-
+
+# -----------------------------------------------------------
+# Wallpaper
+# -----------------------------------------------------------
+
+# Next random wallpaper
+super + b
+	random-wallpaper
+
+# Exclude current wallpaper
+super + shift + b
+	wallpaper-exclude
+
+# Favorite current wallpaper
+super + ctrl + b
+	wallpaper-favorite

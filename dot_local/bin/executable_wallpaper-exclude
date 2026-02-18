@@ -1,0 +1,9 @@
+#!/bin/sh
+# Exclude the current wallpaper and switch to a new one
+current=$(grep -oP "(?<=')[^']+(?=')" ~/.fehbg 2>/dev/null)
+[ -z "$current" ] && exit 1
+
+mkdir -p ~/.config/wallpaper
+echo "$current" >> ~/.config/wallpaper/excluded
+notify-send "Wallpaper excluded" "$(basename "$current")"
+random-wallpaper
