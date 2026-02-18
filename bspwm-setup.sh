@@ -73,6 +73,7 @@ install_packages() {
     playerctl
     brightnessctl
     polybar
+    i3lock
   )
 
   local missing=()

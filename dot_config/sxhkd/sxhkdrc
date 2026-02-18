@@ -21,12 +21,8 @@ super + Tab
 super + slash
 	sxhkd-help
 
-# Terminal (alacritty)
-super + Return
-	alacritty
-
 # Terminal (st)
-super + shift + Return
+super + Return
 	st-wrapper
 
 # -----------------------------------------------------------
@@ -56,6 +52,10 @@ super + shift + r
 # Lock screen (Ctrl+Cmd+L)
 super + ctrl + l
 	i3lock -c 2e3440
+
+# Sleep (lock then suspend)
+super + ctrl + s
+	i3lock -c 2e3440 && systemctl suspend
 
 # Screenshot
 Print
