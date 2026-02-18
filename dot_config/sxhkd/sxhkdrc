@@ -17,6 +17,14 @@ super + space
 super + Tab
 	rofi -show window -show-icons
 
+# Alt-Tab cycle windows
+alt + {_,shift + }Tab
+	bspc node -f {next,prev}.!hidden.window
+
+# Clipboard history (Cmd+V style)
+super + v
+	rofi -modi "clipboard:greenclip print" -show clipboard -run-command '{cmd}'
+
 # Keybinding cheatsheet
 super + slash
 	sxhkd-help
