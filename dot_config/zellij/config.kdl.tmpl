@@ -346,8 +346,13 @@ themes {
 // Use the system clipboard (not X11 primary selection)
 copy_clipboard "system"
 
+// On macOS, use pbcopy directly so copy-on-select works reliably.
+{{- if eq .chezmoi.os "darwin" }}
+copy_command "pbcopy"
+{{- else }}
 // Copy command override (cross-platform clipboard helper)
 copy_command "{{ .chezmoi.homeDir }}/.local/bin/zellij-copy"
+{{- end }}
 
 // ===================================
 // Scrollback Configuration
