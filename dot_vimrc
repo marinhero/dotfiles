@@ -55,7 +55,10 @@ endfunction
 
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
 autocmd BufRead,BufNewFile *.md setlocal spell
-autocmd! GUIEnter * set vb t_vb=
+augroup vimrc_guienter
+  autocmd!
+  autocmd GUIEnter * set vb t_vb=
+augroup END
 autocmd FileChangedShell * echohl WarningMsg | echo "File changed shell." | echohl None
 
 highlight ExtraWhitespace ctermbg=red guibg=red ctermfg=red guifg=red
@@ -69,9 +72,9 @@ endif
 let mapleader = ","
 
 match ExtraWhitespace /\s\+$/
-match OverLength /\%81v.\+/
+2match OverLength /\%81v.\+/
 
-nmap <script> <silent> <F1> :call ToggleQuickFix()<CR>
+nnoremap <silent> <F4> :call ToggleQuickFix()<CR>
 nnoremap <F2> :set invpaste paste?<CR>
 map <F6> :NERDTreeToggle<CR>
 nnoremap <F5> :let _s=@/<Bar>:%s/\s\+$//e<Bar>:let @/=_s<Bar><CR>
@@ -157,11 +160,13 @@ function! s:fzf_statusline()
   highlight fzf3 ctermfg=237 ctermbg=251
   setlocal statusline=%#fzf1#\ >\ %#fzf2#fz%#fzf3#f
 endfunction
-autocmd! User FzfStatusLine call <SID>fzf_statusline()
+augroup vimrc_fzf_statusline
+  autocmd!
+  autocmd User FzfStatusLine call <SID>fzf_statusline()
+augroup END
 if executable('ag')
   let $FZF_DEFAULT_COMMAND = 'ag -g ""'
   set grepprg=ag\ --nogroup\ --nocolor
 endif
 
 " fzf installed via vim-plug — rtp handled automatically
-

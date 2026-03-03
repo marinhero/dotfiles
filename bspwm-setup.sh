@@ -32,7 +32,8 @@ target_home() { getent passwd "$(target_user)" | cut -d: -f6; }
 # Run a command as the target (non-root) user with asdf shims in PATH.
 run_as_user() {
   local path_prefix='export PATH="$HOME/.asdf/shims:$HOME/.local/bin:$PATH";'
-  su - "$(target_user)" -c "$path_prefix $*"
+  local cmd="${1-}"
+  su - "$(target_user)" -c "$path_prefix $cmd"
 }
 
 # ---------- preflight ----------

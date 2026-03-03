@@ -24,7 +24,7 @@
   default = current
 
 [alias]
-  down = !git checkout master && git merge @{-1} --ff-only && git push
+  down = "!f(){ b=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null); b=${b#origin/}; b=${b:-main}; git checkout \"$b\" && git merge @{-1} --ff-only; }; f"
   up = !git fetch --prune --all && git rebase
   go = !git log --graph --oneline
 

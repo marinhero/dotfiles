@@ -28,8 +28,10 @@ return {
   {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
-      vim.lsp.config("denols", { root_markers = { "deno.json", "deno.jsonc" } })
-      vim.lsp.config("vtsls", { root_markers = { "package.json", "tsconfig.json" } })
+      if vim.lsp and type(vim.lsp.config) == "function" then
+        vim.lsp.config("denols", { root_markers = { "deno.json", "deno.jsonc" } })
+        vim.lsp.config("vtsls", { root_markers = { "package.json", "tsconfig.json" } })
+      end
 
       opts.servers = opts.servers or {}
       opts.servers.denols = vim.tbl_deep_extend("force", opts.servers.denols or {}, {

@@ -56,10 +56,11 @@ target_home() {
 # Prepends asdf shims to PATH so asdf-managed tools are available.
 run_as_user() {
   local path_prefix='export PATH="$HOME/.asdf/shims:$HOME/.opencode/bin:$HOME/.local/bin:$PATH";'
+  local cmd="${1-}"
   if [[ "$OS" == "Darwin" ]]; then
-    bash -c "$path_prefix $*"
+    bash -c "$path_prefix $cmd"
   else
-    su - "$(target_user)" -c "$path_prefix $*"
+    su - "$(target_user)" -c "$path_prefix $cmd"
   fi
 }
 

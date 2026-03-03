@@ -74,8 +74,7 @@ setxkbmap -option ctrl:nocaps &
 
 # Set cursor theme
 xsetroot -cursor_name left_ptr &
-xrdb -merge <<< 'Xcursor.theme: Nordzy-cursors
-Xcursor.size: 24' &
+printf '%s\n%s\n' 'Xcursor.theme: Nordzy-cursors' 'Xcursor.size: 24' | xrdb -merge &
 
 # Clipboard manager
 pgrep -x greenclip > /dev/null || greenclip daemon &

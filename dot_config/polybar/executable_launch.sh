@@ -4,7 +4,8 @@
 polybar-msg cmd quit 2>/dev/null
 
 # Wait until the processes have been shut down
-while pgrep -u "$UID" -x polybar >/dev/null; do sleep 0.5; done
+user_id="$(id -u)"
+while pgrep -u "$user_id" -x polybar >/dev/null; do sleep 0.5; done
 
 # Launch polybar on each monitor
 if command -v xrandr >/dev/null && [ "$(xrandr --query | grep -c ' connected')" -gt 1 ]; then
