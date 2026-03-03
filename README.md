@@ -74,10 +74,10 @@ Black background with [Nord](https://www.nordtheme.com/) accent colors across st
 
 ```bash
 # Full system setup (Linux, run with sudo)
-sudo ./setup.sh
+sudo ./repo/scripts/setup.sh
 
 # bspwm desktop environment only
-sudo ./bspwm-setup.sh
+sudo ./repo/scripts/bspwm-setup.sh
 ```
 
 Both scripts are idempotent.

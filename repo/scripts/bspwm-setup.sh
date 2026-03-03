@@ -5,14 +5,14 @@
 # chezmoi-managed configs and verifies everything is in place.
 #
 # Usage:
-#   sudo ./bspwm-setup.sh
+#   sudo ./repo/scripts/bspwm-setup.sh
 #
 # Log file is written to the same directory as this script.
 #
 set -euo pipefail
 trap 'error "Script failed at line $LINENO (exit code $?). See log: $LOG_FILE"' ERR
 
-DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+DOTFILES_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 OS="$(uname -s)"
 LOG_FILE="$DOTFILES_DIR/bspwm-setup-$(date +%Y%m%d-%H%M%S).log"
 
@@ -94,112 +94,27 @@ install_packages() {
   fi
 }
 
-# ---------- chezmoi sync ----------
-
-sync_configs() {
-  info "--- Syncing configs to chezmoi source ---"
-
-  local chezmoi_src
-  chezmoi_src="$(run_as_user 'chezmoi source-path')"
-
-  if [[ -z "$chezmoi_src" ]]; then
-    error "Could not determine chezmoi source path"
-    exit 1
-  fi
-
-  info "Chezmoi source: $chezmoi_src"
-
-  # Ensure chezmoi is initialized
-  if [[ ! -d "$chezmoi_src" ]]; then
-    info "Initializing chezmoi"
-    run_as_user "chezmoi init"
-  fi
-
-  # bspwm config
-  local src_bspwm="$DOTFILES_DIR/dot_config/bspwm"
-  local dst_bspwm="$chezmoi_src/dot_config/bspwm"
-
-  if [[ ! -d "$src_bspwm" ]]; then
-    error "bspwm config not found at $src_bspwm"
-    error "Expected: $src_bspwm/executable_bspwmrc"
-    exit 1
-  fi
-
-  run_as_user "mkdir -p '$dst_bspwm'"
-  cp -v "$src_bspwm"/* "$dst_bspwm/" 2>&1 | tee -a "$LOG_FILE"
-  chown -R "$(target_user):" "$dst_bspwm"
-  ok "bspwm config synced to chezmoi source"
-
-  # sxhkd config
-  local src_sxhkd="$DOTFILES_DIR/dot_config/sxhkd"
-  local dst_sxhkd="$chezmoi_src/dot_config/sxhkd"
-
-  if [[ ! -d "$src_sxhkd" ]]; then
-    error "sxhkd config not found at $src_sxhkd"
-    error "Expected: $src_sxhkd/sxhkdrc"
-    exit 1
-  fi
-
-  run_as_user "mkdir -p '$dst_sxhkd'"
-  cp -v "$src_sxhkd"/* "$dst_sxhkd/" 2>&1 | tee -a "$LOG_FILE"
-  chown -R "$(target_user):" "$dst_sxhkd"
-  ok "sxhkd config synced to chezmoi source"
-
-  # polybar config
-  local src_polybar="$DOTFILES_DIR/dot_config/polybar"
-  local dst_polybar="$chezmoi_src/dot_config/polybar"
-
-  if [[ ! -d "$src_polybar" ]]; then
-    error "polybar config not found at $src_polybar"
-    exit 1
-  fi
-
-  run_as_user "mkdir -p '$dst_polybar'"
-  cp -v "$src_polybar"/* "$dst_polybar/" 2>&1 | tee -a "$LOG_FILE"
-  chown -R "$(target_user):" "$dst_polybar"
-  ok "polybar config synced to chezmoi source"
-
-  # rofi config
-  local src_rofi="$DOTFILES_DIR/dot_config/rofi"
-  local dst_rofi="$chezmoi_src/dot_config/rofi"
-
-  if [[ -d "$src_rofi" ]]; then
-    run_as_user "mkdir -p '$dst_rofi'"
-    cp -v "$src_rofi"/* "$dst_rofi/" 2>&1 | tee -a "$LOG_FILE"
-    chown -R "$(target_user):" "$dst_rofi"
-    ok "rofi config synced to chezmoi source"
-  fi
-
-  # helper scripts (sxhkd-help, st-wrapper, etc.)
-  local src_bin="$DOTFILES_DIR/dot_local/bin"
-  local dst_bin="$chezmoi_src/dot_local/bin"
-
-  if [[ -d "$src_bin" ]]; then
-    run_as_user "mkdir -p '$dst_bin'"
-    cp -v "$src_bin"/* "$dst_bin/" 2>&1 | tee -a "$LOG_FILE"
-    chown -R "$(target_user):" "$dst_bin"
-    ok "helper scripts synced to chezmoi source"
-  fi
-
-  # desktop entries (st-wrapper launcher, etc.)
-  local src_apps="$DOTFILES_DIR/dot_local/share/applications"
-  local dst_apps="$chezmoi_src/dot_local/share/applications"
-
-  if [[ -d "$src_apps" ]]; then
-    run_as_user "mkdir -p '$dst_apps'"
-    cp -v "$src_apps"/* "$dst_apps/" 2>&1 | tee -a "$LOG_FILE"
-    chown -R "$(target_user):" "$dst_apps"
-    ok "desktop entries synced to chezmoi source"
-  fi
-}
-
 # ---------- chezmoi apply ----------
 
 apply_configs() {
   info "--- Applying configs via chezmoi ---"
 
-  run_as_user "chezmoi apply ~/.config/bspwm" 2>&1 | tee -a "$LOG_FILE"
-  ok "chezmoi apply ~/.config/bspwm"
+  local home_dir
+  home_dir="$(target_home)"
+  local src_bspwmrc="$DOTFILES_DIR/dot_config/bspwm/executable_bspwmrc"
+  local dst_bspwm_dir="$home_dir/.config/bspwm"
+  local dst_bspwmrc="$dst_bspwm_dir/bspwmrc"
+
+  if [[ ! -f "$src_bspwmrc" ]]; then
+    error "bspwm config not found at $src_bspwmrc"
+    exit 1
+  fi
+
+  mkdir -p "$dst_bspwm_dir"
+  cp -v "$src_bspwmrc" "$dst_bspwmrc" 2>&1 | tee -a "$LOG_FILE"
+  chmod +x "$dst_bspwmrc"
+  chown "$(target_user):" "$dst_bspwmrc"
+  ok "deployed $dst_bspwmrc"
 
   run_as_user "chezmoi apply ~/.config/sxhkd" 2>&1 | tee -a "$LOG_FILE"
   ok "chezmoi apply ~/.config/sxhkd"
@@ -348,7 +263,6 @@ main() {
 
   preflight
   install_packages
-  sync_configs
   apply_configs
   verify
 

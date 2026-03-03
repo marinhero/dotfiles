@@ -2,3 +2,15 @@
 # These files should be maintained locally on each machine
 
 .zshrc
+
+# Repo-only files that should stay at root
+README.md
+AGENTS.md
+.claude/**
+.gitignore
+
+# Repo-only setup scripts
+repo/scripts/**
+
+# Keep bspwm config local-only (not managed/applied by chezmoi)
+.config/bspwm/**

@@ -66,15 +66,30 @@ keybinds clear-defaults=true {
         bind "Ctrl h" { SwitchToMode "move"; }
         bind "Ctrl q" { Quit; }
         bind "Alt n" { NewPane; }
+        // macOS-friendly fallbacks (Option/Alt combos can be flaky in some terminals)
+        bind "Ctrl Shift n" { NewPane; }
         bind "Alt h" "Alt Left" { MoveFocusOrTab "Left"; }
         bind "Alt l" "Alt Right" { MoveFocusOrTab "Right"; }
         bind "Alt j" "Alt Down" { MoveFocus "Down"; }
         bind "Alt k" "Alt Up" { MoveFocus "Up"; }
+        bind "Ctrl Shift Left" { MoveFocusOrTab "Left"; }
+        bind "Ctrl Shift Right" { MoveFocusOrTab "Right"; }
+        bind "Ctrl Shift Down" { MoveFocus "Down"; }
+        bind "Ctrl Shift Up" { MoveFocus "Up"; }
+        bind "Ctrl Shift h" { MoveFocusOrTab "Left"; }
+        bind "Ctrl Shift l" { MoveFocusOrTab "Right"; }
+        bind "Ctrl Shift j" { MoveFocus "Down"; }
+        bind "Ctrl Shift k" { MoveFocus "Up"; }
         bind "Alt =" "Alt +" { Resize "Increase"; }
         bind "Alt -" { Resize "Decrease"; }
+        bind "Ctrl Shift =" "Ctrl Shift +" { Resize "Increase"; }
+        bind "Ctrl Shift -" { Resize "Decrease"; }
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
+        bind "Ctrl Shift [" { PreviousSwapLayout; }
+        bind "Ctrl Shift ]" { NextSwapLayout; }
         bind "Alt f" { ToggleFocusFullscreen; }
+        bind "Ctrl Shift f" { ToggleFocusFullscreen; }
     }
 
     // Locked mode (passthrough all keys to terminal)
@@ -211,15 +226,29 @@ keybinds clear-defaults=true {
         bind "Ctrl g" { SwitchToMode "locked"; }
         bind "Ctrl q" { Quit; }
         bind "Alt n" { NewPane; }
+        bind "Ctrl Shift n" { NewPane; }
         bind "Alt h" "Alt Left" { MoveFocusOrTab "Left"; }
         bind "Alt l" "Alt Right" { MoveFocusOrTab "Right"; }
         bind "Alt j" "Alt Down" { MoveFocus "Down"; }
         bind "Alt k" "Alt Up" { MoveFocus "Up"; }
+        bind "Ctrl Shift Left" { MoveFocusOrTab "Left"; }
+        bind "Ctrl Shift Right" { MoveFocusOrTab "Right"; }
+        bind "Ctrl Shift Down" { MoveFocus "Down"; }
+        bind "Ctrl Shift Up" { MoveFocus "Up"; }
+        bind "Ctrl Shift h" { MoveFocusOrTab "Left"; }
+        bind "Ctrl Shift l" { MoveFocusOrTab "Right"; }
+        bind "Ctrl Shift j" { MoveFocus "Down"; }
+        bind "Ctrl Shift k" { MoveFocus "Up"; }
         bind "Alt =" "Alt +" { Resize "Increase"; }
         bind "Alt -" { Resize "Decrease"; }
+        bind "Ctrl Shift =" "Ctrl Shift +" { Resize "Increase"; }
+        bind "Ctrl Shift -" { Resize "Decrease"; }
         bind "Alt [" { PreviousSwapLayout; }
         bind "Alt ]" { NextSwapLayout; }
+        bind "Ctrl Shift [" { PreviousSwapLayout; }
+        bind "Ctrl Shift ]" { NextSwapLayout; }
         bind "Alt f" { ToggleFocusFullscreen; }
+        bind "Ctrl Shift f" { ToggleFocusFullscreen; }
     }
 
     shared_except "normal" "locked" {

@@ -1,0 +1,8 @@
+# Ghostty overrides to make Zellij Alt bindings reliable on macOS.
+macos-option-as-alt = true
+
+# Force Option+Arrow to emit Alt+Arrow CSI sequences.
+keybind = alt+left=csi:1;3D
+keybind = alt+right=csi:1;3C
+keybind = alt+up=csi:1;3A
+keybind = alt+down=csi:1;3B

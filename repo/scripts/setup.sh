@@ -10,17 +10,17 @@
 #                        oh-my-zsh, Insomnia
 #
 # Usage:
-#   ./setup.sh              # install everything, prompt interactively for hostname
-#   ./setup.sh <hostname>   # install everything and set hostname
+#   ./repo/scripts/setup.sh              # install everything, prompt interactively for hostname
+#   ./repo/scripts/setup.sh <hostname>   # install everything and set hostname
 #
 # macOS:  run as your normal user (brew must not run as root)
-# Linux:  run with sudo (e.g. sudo ./setup.sh)
+# Linux:  run with sudo (e.g. sudo ./repo/scripts/setup.sh)
 #
 set -euo pipefail
 trap 'error "Script failed at line $LINENO (exit code $?). See log: $LOG_FILE"' ERR
 
 NEW_HOSTNAME="${1:-}"
-DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+DOTFILES_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 OS="$(uname -s)"
 LOG_FILE="$DOTFILES_DIR/setup-$(date +%Y%m%d-%H%M%S).log"
 
@@ -127,7 +127,7 @@ preflight() {
 set_hostname() {
   if [[ -z "$NEW_HOSTNAME" ]]; then
     warn "No hostname provided. Current hostname: $(hostname)"
-    warn "  Usage: ./setup.sh <hostname>"
+    warn "  Usage: ./repo/scripts/setup.sh <hostname>"
     printf '\033[1;33m::\033[0m Set hostname now? [y/N] '
     read -r answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
