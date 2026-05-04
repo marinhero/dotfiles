@@ -2,8 +2,8 @@
 # https://starship.rs/config/
 
 format = """
-[╭─](bold blue)$directory$git_branch$git_status$git_state$cmd_duration
-[╰─](bold blue)$character"""
+$directory$git_branch$git_status$git_state$cmd_duration
+$character """
 
 add_newline = false
 
