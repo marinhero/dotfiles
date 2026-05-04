@@ -43,4 +43,6 @@ repo/**
 .local/share/applications/st.desktop
 .local/share/applications
 .local/share/applications/**
+.config/btop/**
+.config/btop
 {{- end }}
