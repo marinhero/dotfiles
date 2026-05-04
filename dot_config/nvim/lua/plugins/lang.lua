@@ -28,9 +28,22 @@ return {
   {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
-      if vim.lsp and type(vim.lsp.config) == "function" then
-        vim.lsp.config("denols", { root_markers = { "deno.json", "deno.jsonc" } })
-        vim.lsp.config("vtsls", { root_markers = { "package.json", "tsconfig.json" } })
+      -- vim.lsp.config is a callable in nvim 0.11 and a table in 0.12+. Try
+      -- the callable form first, fall back to direct table assignment.
+      local set_lsp_config = function(name, cfg)
+        if type(vim.lsp.config) == "function" then
+          vim.lsp.config(name, cfg)
+        elseif type(vim.lsp.config) == "table" then
+          vim.lsp.config[name] = vim.tbl_deep_extend("force", vim.lsp.config[name] or {}, cfg)
+        end
+      end
+      set_lsp_config("denols", { root_markers = { "deno.json", "deno.jsonc" } })
+      set_lsp_config("vtsls", { root_markers = { "package.json", "tsconfig.json" } })
+      -- LazyVim's typescript extra enables vtsls but not denols. Enable it
+      -- here so it attaches in Deno projects (root_markers above keeps it
+      -- from firing in Node projects).
+      if type(vim.lsp.enable) == "function" then
+        pcall(vim.lsp.enable, "denols")
       end
 
       opts.servers = opts.servers or {}
