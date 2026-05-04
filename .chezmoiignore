@@ -19,11 +19,6 @@ repo/**
 # Keep bspwm config local-only (not managed/applied by chezmoi)
 .config/bspwm/**
 
-# Termux-only — skip the claude wrapper everywhere except Termux
-{{- if ne .chezmoi.os "android" }}
-.local/bin/claude
-{{- end }}
-
 # Desktop-only configs — skip on Termux (Android)
 {{- if eq .chezmoi.os "android" }}
 .config/polybar/**
