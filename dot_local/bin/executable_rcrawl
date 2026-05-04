@@ -1,0 +1,33 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# rcrawl — wrapper for ~/Code/rcrawl/distill.py that sets the env to talk
+# to the local llama-server pair started by `local-llm`.
+#
+# Run `local-llm start` first so the chat (:8090) and embed (:8091) servers
+# are up. Then:
+#
+#   rcrawl scrape <subreddit>
+#   rcrawl embed <subreddit>
+#   rcrawl ask <subreddit> "<question>"
+#   rcrawl query <subreddit> <terms...>
+#   rcrawl stats <subreddit>
+#   rcrawl list
+#
+# Override any of these via env if you want different ports/models:
+#   USE_LLAMA, LLAMA_URL, LLAMA_EMBED_URL, EMBED_MODEL, CHAT_MODEL,
+#   OLLAMA_URL, REDDIT_DISTILL_DIR.
+
+set -eu
+
+DISTILL="${RCRAWL_DISTILL:-$HOME/Code/rcrawl/distill.py}"
+if [ ! -x "$DISTILL" ]; then
+  echo "rcrawl: distill.py not found or not executable at $DISTILL" >&2
+  exit 1
+fi
+
+export USE_LLAMA="${USE_LLAMA:-1}"
+export LLAMA_URL="${LLAMA_URL:-http://127.0.0.1:8090}"
+export LLAMA_EMBED_URL="${LLAMA_EMBED_URL:-http://127.0.0.1:8091}"
+export EMBED_MODEL="${EMBED_MODEL:-nomic}"
+export CHAT_MODEL="${CHAT_MODEL:-qwen3-4b}"
+
+exec "$DISTILL" "$@"

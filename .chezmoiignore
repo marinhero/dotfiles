@@ -19,10 +19,11 @@ repo/**
 # Keep bspwm config local-only (not managed/applied by chezmoi)
 .config/bspwm/**
 
-# debian-run + local-llm are Termux-only (proot-distro / llama.cpp on Termux)
+# debian-run + local-llm + rcrawl are Termux-only
 {{- if ne .chezmoi.os "android" }}
 .local/bin/debian-run
 .local/bin/local-llm
+.local/bin/rcrawl
 {{- end }}
 
 # Desktop-only configs — skip on Termux (Android)

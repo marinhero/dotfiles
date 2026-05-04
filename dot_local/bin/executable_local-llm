@@ -1,90 +1,151 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Start/stop/status helper for the local llama-server.
+# Start/stop/status helper for the local llama-server pair (chat + embed).
 #
-# Default: Qwen3-4B-Instruct serving an OpenAI-compatible API on 127.0.0.1:8090.
-# Override the model via $LOCAL_LLM_MODEL.
+# Defaults:
+#   chat:  Qwen3-4B-Instruct on 127.0.0.1:8090   ($LOCAL_LLM_MODEL)
+#   embed: nomic-embed-text-v1.5 on 127.0.0.1:8091 ($LOCAL_EMBED_MODEL)
 #
 # Usage:
-#   local-llm start    # background-launch llama-server
-#   local-llm stop     # kill the server
-#   local-llm status   # check if running
-#   local-llm logs     # tail the server log
-#   local-llm          # same as status
+#   local-llm start             # start both (chat + embed)
+#   local-llm start chat        # start only chat
+#   local-llm start embed       # start only embed
+#   local-llm stop              # stop both
+#   local-llm stop chat|embed   # stop one
+#   local-llm status            # check both
+#   local-llm logs chat|embed   # tail one log
+#   local-llm                   # status
 #
-# WARNING: don't run while Claude Code is active on this phone — the kernel
-# will evict the model's mmap'd weights to make room and inference becomes
-# unusable (~21 min for a one-sentence reply). Exit Claude first.
+# Memory note: Claude Code + chat server can fight for RAM on this phone.
+# If `llm` or `rcrawl ask` hangs, exit Claude first or stop the chat server.
 
 set -eu
 
-MODEL="${LOCAL_LLM_MODEL:-$HOME/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
-PORT="${LOCAL_LLM_PORT:-8090}"
+CHAT_MODEL_PATH="${LOCAL_LLM_MODEL:-$HOME/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
+CHAT_PORT="${LOCAL_LLM_PORT:-8090}"
+CHAT_THREADS="${LOCAL_LLM_THREADS:-6}"
+CHAT_CTX="${LOCAL_LLM_CTX:-8192}"
+
+EMBED_MODEL_PATH="${LOCAL_EMBED_MODEL:-$HOME/models/nomic-embed-text-v1.5.Q4_K_M.gguf}"
+EMBED_PORT="${LOCAL_EMBED_PORT:-8091}"
+EMBED_THREADS="${LOCAL_EMBED_THREADS:-4}"
+
 HOST="${LOCAL_LLM_HOST:-127.0.0.1}"
-THREADS="${LOCAL_LLM_THREADS:-6}"
-CTX="${LOCAL_LLM_CTX:-8192}"
-PID_FILE="$TMPDIR/local-llm.pid"
-LOG_FILE="$TMPDIR/local-llm.log"
+
+pid_file()  { echo "$TMPDIR/local-llm-$1.pid"; }
+log_file()  { echo "$TMPDIR/local-llm-$1.log"; }
 
 is_running() {
-  [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+  local pf; pf="$(pid_file "$1")"
+  [ -f "$pf" ] && kill -0 "$(cat "$pf")" 2>/dev/null
+}
+
+start_one() {
+  local name="$1"
+  local pf; pf="$(pid_file "$name")"
+  local lf; lf="$(log_file "$name")"
+  if is_running "$name"; then
+    echo "local-llm: $name already running (pid $(cat "$pf"))"
+    return 0
+  fi
+  if ! command -v llama-server >/dev/null 2>&1; then
+    echo "local-llm: llama-server not installed (pkg install llama-cpp)" >&2
+    return 1
+  fi
+  local model port args
+  if [ "$name" = "chat" ]; then
+    model="$CHAT_MODEL_PATH"
+    port="$CHAT_PORT"
+    args=(-t "$CHAT_THREADS" -c "$CHAT_CTX")
+  else
+    model="$EMBED_MODEL_PATH"
+    port="$EMBED_PORT"
+    args=(-t "$EMBED_THREADS" --embeddings --pooling mean)
+  fi
+  if [ ! -f "$model" ]; then
+    echo "local-llm: $name model not found at $model" >&2
+    return 1
+  fi
+  nohup llama-server -m "$model" "${args[@]}" \
+    --port "$port" --host "$HOST" > "$lf" 2>&1 &
+  echo $! > "$pf"
+  echo "local-llm: $name starting (pid $!), waiting for health..."
+  local i
+  for i in $(seq 1 60); do
+    if curl -fsS "http://$HOST:$port/health" >/dev/null 2>&1; then
+      echo "local-llm: $name ready at http://$HOST:$port"
+      return 0
+    fi
+    sleep 2
+  done
+  echo "local-llm: $name health check timed out — see $lf" >&2
+  return 1
+}
+
+stop_one() {
+  local name="$1"
+  local pf; pf="$(pid_file "$name")"
+  if ! is_running "$name"; then
+    echo "local-llm: $name not running"
+    [ -f "$pf" ] && rm -f "$pf"
+    return 0
+  fi
+  local pid; pid="$(cat "$pf")"
+  kill "$pid"
+  rm -f "$pf"
+  echo "local-llm: $name stopped (pid $pid)"
+}
+
+status_one() {
+  local name="$1"
+  local pf; pf="$(pid_file "$name")"
+  local port
+  if [ "$name" = "chat" ]; then port="$CHAT_PORT"; else port="$EMBED_PORT"; fi
+  if is_running "$name"; then
+    echo "local-llm: $name running (pid $(cat "$pf")) at http://$HOST:$port"
+  else
+    echo "local-llm: $name not running"
+  fi
+}
+
+valid_target() {
+  case "$1" in chat|embed) return 0;; *) return 1;; esac
 }
 
 case "${1:-status}" in
   start)
-    if is_running; then
-      echo "local-llm: already running (pid $(cat "$PID_FILE"))"
-      exit 0
+    target="${2:-both}"
+    if [ "$target" = "both" ]; then
+      start_one chat && start_one embed
+    elif valid_target "$target"; then
+      start_one "$target"
+    else
+      echo "local-llm: unknown target '$target' (use chat|embed)" >&2; exit 2
     fi
-    if [ ! -f "$MODEL" ]; then
-      echo "local-llm: model not found at $MODEL" >&2
-      exit 1
-    fi
-    if ! command -v llama-server >/dev/null 2>&1; then
-      echo "local-llm: llama-server not installed (pkg install llama-cpp)" >&2
-      exit 1
-    fi
-    nohup llama-server -m "$MODEL" -t "$THREADS" -c "$CTX" \
-      --port "$PORT" --host "$HOST" > "$LOG_FILE" 2>&1 &
-    echo $! > "$PID_FILE"
-    echo "local-llm: starting (pid $!), waiting for health..."
-    for i in $(seq 1 60); do
-      if curl -fsS "http://$HOST:$PORT/health" >/dev/null 2>&1; then
-        echo "local-llm: ready at http://$HOST:$PORT"
-        exit 0
-      fi
-      sleep 2
-    done
-    echo "local-llm: health check timed out — see $LOG_FILE" >&2
-    exit 1
     ;;
   stop)
-    if ! is_running; then
-      echo "local-llm: not running"
-      [ -f "$PID_FILE" ] && rm -f "$PID_FILE"
-      exit 0
+    target="${2:-both}"
+    if [ "$target" = "both" ]; then
+      stop_one chat; stop_one embed
+    elif valid_target "$target"; then
+      stop_one "$target"
+    else
+      echo "local-llm: unknown target '$target' (use chat|embed)" >&2; exit 2
     fi
-    pid="$(cat "$PID_FILE")"
-    kill "$pid"
-    rm -f "$PID_FILE"
-    echo "local-llm: stopped (pid $pid)"
     ;;
   status|"")
-    if is_running; then
-      echo "local-llm: running (pid $(cat "$PID_FILE")) at http://$HOST:$PORT"
-      echo "  model: $MODEL"
-    else
-      echo "local-llm: not running"
-    fi
+    status_one chat
+    status_one embed
     ;;
   logs)
-    if [ -f "$LOG_FILE" ]; then
-      tail -f "$LOG_FILE"
-    else
-      echo "local-llm: no log at $LOG_FILE"
+    target="${2:-chat}"
+    if ! valid_target "$target"; then
+      echo "local-llm: usage: local-llm logs chat|embed" >&2; exit 2
     fi
+    lf="$(log_file "$target")"
+    if [ -f "$lf" ]; then tail -f "$lf"; else echo "local-llm: no log at $lf"; fi
     ;;
   *)
-    echo "Usage: local-llm [start|stop|status|logs]" >&2
+    echo "Usage: local-llm [start|stop|status|logs] [chat|embed]" >&2
     exit 2
     ;;
 esac
