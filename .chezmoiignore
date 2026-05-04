@@ -19,6 +19,11 @@ repo/**
 # Keep bspwm config local-only (not managed/applied by chezmoi)
 .config/bspwm/**
 
+# debian-run is Termux-only (depends on proot-distro)
+{{- if ne .chezmoi.os "android" }}
+.local/bin/debian-run
+{{- end }}
+
 # Desktop-only configs — skip on Termux (Android)
 {{- if eq .chezmoi.os "android" }}
 .config/polybar/**
