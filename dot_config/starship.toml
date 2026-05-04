@@ -23,16 +23,17 @@ format = "[$symbol$branch]($style) "
 
 [git_status]
 style = "bold yellow"
-# Each substatus carries its own trailing space so multiple indicators don't
-# collide visually (e.g. "✱2 ?1" instead of "✱2?1").
-ahead = "⇡${count} "
-behind = "⇣${count} "
-diverged = "⇡${ahead_count}⇣${behind_count} "
-modified = "✱${count} "
+# Space between symbol and count (Nerd Font glyphs visually overlap the
+# adjacent digit otherwise) AND a trailing space between substatuses so
+# multiple indicators don't collide.
+ahead = "⇡ ${count} "
+behind = "⇣ ${count} "
+diverged = "⇡ ${ahead_count} ⇣ ${behind_count} "
+modified = "✱ ${count} "
 staged = "[++\\($count\\)](green) "
-untracked = "?${count} "
+untracked = "? ${count} "
 stashed = "≡ "
-deleted = "✘${count} "
+deleted = "✘ ${count} "
 
 [git_state]
 style = "bold red"
