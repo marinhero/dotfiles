@@ -1,0 +1,90 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Start/stop/status helper for the local llama-server.
+#
+# Default: Qwen3-4B-Instruct serving an OpenAI-compatible API on 127.0.0.1:8090.
+# Override the model via $LOCAL_LLM_MODEL.
+#
+# Usage:
+#   local-llm start    # background-launch llama-server
+#   local-llm stop     # kill the server
+#   local-llm status   # check if running
+#   local-llm logs     # tail the server log
+#   local-llm          # same as status
+#
+# WARNING: don't run while Claude Code is active on this phone — the kernel
+# will evict the model's mmap'd weights to make room and inference becomes
+# unusable (~21 min for a one-sentence reply). Exit Claude first.
+
+set -eu
+
+MODEL="${LOCAL_LLM_MODEL:-$HOME/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
+PORT="${LOCAL_LLM_PORT:-8090}"
+HOST="${LOCAL_LLM_HOST:-127.0.0.1}"
+THREADS="${LOCAL_LLM_THREADS:-6}"
+CTX="${LOCAL_LLM_CTX:-8192}"
+PID_FILE="$TMPDIR/local-llm.pid"
+LOG_FILE="$TMPDIR/local-llm.log"
+
+is_running() {
+  [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+}
+
+case "${1:-status}" in
+  start)
+    if is_running; then
+      echo "local-llm: already running (pid $(cat "$PID_FILE"))"
+      exit 0
+    fi
+    if [ ! -f "$MODEL" ]; then
+      echo "local-llm: model not found at $MODEL" >&2
+      exit 1
+    fi
+    if ! command -v llama-server >/dev/null 2>&1; then
+      echo "local-llm: llama-server not installed (pkg install llama-cpp)" >&2
+      exit 1
+    fi
+    nohup llama-server -m "$MODEL" -t "$THREADS" -c "$CTX" \
+      --port "$PORT" --host "$HOST" > "$LOG_FILE" 2>&1 &
+    echo $! > "$PID_FILE"
+    echo "local-llm: starting (pid $!), waiting for health..."
+    for i in $(seq 1 60); do
+      if curl -fsS "http://$HOST:$PORT/health" >/dev/null 2>&1; then
+        echo "local-llm: ready at http://$HOST:$PORT"
+        exit 0
+      fi
+      sleep 2
+    done
+    echo "local-llm: health check timed out — see $LOG_FILE" >&2
+    exit 1
+    ;;
+  stop)
+    if ! is_running; then
+      echo "local-llm: not running"
+      [ -f "$PID_FILE" ] && rm -f "$PID_FILE"
+      exit 0
+    fi
+    pid="$(cat "$PID_FILE")"
+    kill "$pid"
+    rm -f "$PID_FILE"
+    echo "local-llm: stopped (pid $pid)"
+    ;;
+  status|"")
+    if is_running; then
+      echo "local-llm: running (pid $(cat "$PID_FILE")) at http://$HOST:$PORT"
+      echo "  model: $MODEL"
+    else
+      echo "local-llm: not running"
+    fi
+    ;;
+  logs)
+    if [ -f "$LOG_FILE" ]; then
+      tail -f "$LOG_FILE"
+    else
+      echo "local-llm: no log at $LOG_FILE"
+    fi
+    ;;
+  *)
+    echo "Usage: local-llm [start|stop|status|logs]" >&2
+    exit 2
+    ;;
+esac
