@@ -9,8 +9,38 @@ AGENTS.md
 .claude/**
 .gitignore
 
-# Repo-only setup scripts
+# Repo-only setup scripts (and the parent dir on Termux)
 repo/scripts/**
+{{- if eq .chezmoi.os "android" }}
+repo
+repo/**
+{{- end }}
 
 # Keep bspwm config local-only (not managed/applied by chezmoi)
 .config/bspwm/**
+
+# Termux-only — skip the claude wrapper everywhere except Termux
+{{- if ne .chezmoi.os "android" }}
+.local/bin/claude
+{{- end }}
+
+# Desktop-only configs — skip on Termux (Android)
+{{- if eq .chezmoi.os "android" }}
+.config/polybar/**
+.config/rofi/**
+.config/sxhkd/**
+.config/picom/**
+.config/gtk-3.0/**
+.config/ghostty/**
+.gtkrc-2.0
+.local/bin/st-wrapper
+.local/bin/lock-screen
+.local/bin/random-wallpaper
+.local/bin/wallpaper-exclude
+.local/bin/wallpaper-favorite
+.local/bin/web-search
+.local/bin/sxhkd-help
+.local/share/applications/st.desktop
+.local/share/applications
+.local/share/applications/**
+{{- end }}
