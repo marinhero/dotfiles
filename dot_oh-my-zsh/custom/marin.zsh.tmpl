@@ -84,9 +84,37 @@ man() {
         man "$@"
 }
 
+#------------CLAUDE PIPES--------------
+# One-shot Claude Code in print mode. Pipes stdin or takes args.
+#   cat file | askc "summarize"
+#   git diff | askcc "any regressions?"   # continues last session
+#   journalctl -n 200 | askch "what failed?"  # Haiku, cheap/fast
+askc()  { claude -p "$@"; }
+askcc() { claude -p -c "$@"; }
+askch() { claude -p --model claude-haiku-4-5-20251001 "$@"; }
+
 #------------ENV-----------------
 export HISTTIMEFORMAT="%d/%m/%y %T "
 export SUDO_PS1='\[\e[0;31m\]\u\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[0;31m\]\$ \[\e[m\]\[\e[0;32m\]'
+
+# Per-machine secrets (HF_TOKEN, etc.) — not managed by chezmoi
+[[ -f "$HOME/.config/zsh/secrets.zsh" ]] && source "$HOME/.config/zsh/secrets.zsh"
+
+{{- if .is_termux }}
+# Termux: point local-llm at the 14B model with a 16K context window.
+# Restored on shell start; local-llm reads these on `start chat`.
+export LOCAL_LLM_MODEL="$HOME/models/Qwen3-14B-Q4_K_M.gguf"
+export LOCAL_LLM_CTX=16384
+
+# Local LLM persona shortcuts (Qwen3-14B @ :8090, temperature pinned to 0.2).
+# Templates live in ~/.config/io.datasette.llm/templates/<name>.yaml.
+#   brief  "...": terse persona — short, direct answers
+#   review "...": coder persona — engineering judgment, code review
+#   teach  "...": teacher persona — pedagogical, builds mental models
+alias brief='llm -t terse -o temperature 0.2'
+alias review='llm -t coder -o temperature 0.2'
+alias teach='llm -t teacher -o temperature 0.2'
+{{- end }}
 
 {{- if .is_work }}
 # Work-specific environment variables

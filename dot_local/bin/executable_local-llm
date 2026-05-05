@@ -23,7 +23,7 @@ set -eu
 CHAT_MODEL_PATH="${LOCAL_LLM_MODEL:-$HOME/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
 CHAT_PORT="${LOCAL_LLM_PORT:-8090}"
 CHAT_THREADS="${LOCAL_LLM_THREADS:-6}"
-CHAT_CTX="${LOCAL_LLM_CTX:-8192}"
+CHAT_CTX="${LOCAL_LLM_CTX:-32768}"
 
 EMBED_MODEL_PATH="${LOCAL_EMBED_MODEL:-$HOME/models/nomic-embed-text-v1.5.Q4_K_M.gguf}"
 EMBED_PORT="${LOCAL_EMBED_PORT:-8091}"
@@ -55,7 +55,7 @@ start_one() {
   if [ "$name" = "chat" ]; then
     model="$CHAT_MODEL_PATH"
     port="$CHAT_PORT"
-    args=(-t "$CHAT_THREADS" -c "$CHAT_CTX")
+    args=(-t "$CHAT_THREADS" -c "$CHAT_CTX" -ctk q8_0 -ctv q8_0)
   else
     model="$EMBED_MODEL_PATH"
     port="$EMBED_PORT"
