@@ -87,7 +87,11 @@ start_one() {
         export LD_LIBRARY_PATH="$OPENCL_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         ;;
       cpu)
-        args+=(-ctk q8_0 -ctv q8_0)
+        # Force CPU even with GPU backends installed — `-ngl 0` alone
+        # leaves the Vulkan backend touching graph plumbing and hitting
+        # vk::DeviceLost on Adreno mid-decode. `--device none` fully
+        # isolates inference from any GPU backend.
+        args+=(--device none -ctk q8_0 -ctv q8_0)
         ;;
       *)
         echo "local-llm: unknown LOCAL_LLM_BACKEND='$CHAT_BACKEND' (use cpu|opencl)" >&2
