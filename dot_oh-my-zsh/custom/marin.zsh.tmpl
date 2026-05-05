@@ -105,6 +105,11 @@ export SUDO_PS1='\[\e[0;31m\]\u\[\e[m\] \[\e[1;34m\]\w\[\e[m\] \[\e[0;31m\]\$ \[
 # Restored on shell start; local-llm reads these on `start chat`.
 export LOCAL_LLM_MODEL="$HOME/models/Qwen3-14B-Q4_K_M.gguf"
 export LOCAL_LLM_CTX=16384
+# Backend default is cpu (safe). To use Adreno OpenCL for ~9.5x prompt
+# processing on Q4_0 GGUFs (see ~/.local/bin/local-llm header for setup):
+#   export LOCAL_LLM_BACKEND=opencl
+#   export LOCAL_LLM_MODEL="$HOME/models/Qwen3-4B-Instruct-2507-Q4_0.gguf"
+# 14B + opencl has OOM-killed Termux — close Claude and shrink ctx first.
 
 # Local LLM persona shortcuts (Qwen3-14B @ :8090, temperature pinned to 0.2).
 # Templates live in ~/.config/io.datasette.llm/templates/<name>.yaml.

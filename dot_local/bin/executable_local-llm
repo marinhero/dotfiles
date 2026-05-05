@@ -15,6 +15,26 @@
 #   local-llm logs chat|embed   # tail one log
 #   local-llm                   # status
 #
+# Backend selection ($LOCAL_LLM_BACKEND, default cpu):
+#   cpu     : ARM I8MM CPU path with q8_0 quantized KV cache (memory-saving)
+#   opencl  : Adreno OpenCL path (Adreno-tuned kernels). Use Q4_0 GGUFs only —
+#             the OpenCL backend lacks SET_ROWS for quantized KV cache, so
+#             KV stays fp16 (more memory, ~9.5x faster prompt processing,
+#             ~+16% decode on Qwen3-4B; 14B has OOM-killed Termux — close
+#             Claude and shrink ctx if you try it).
+#
+# OpenCL one-time setup (Adreno 830 / Snapdragon 8 Elite for Galaxy):
+#   pkg install vulkan-loader-android ocl-icd clinfo llama-cpp-backend-opencl
+#   mkdir -p $HOME/.local/lib/opencl
+#   cp /system/vendor/lib64/libOpenCL{,_adreno}.so $HOME/.local/lib/opencl/
+#   mkdir -p $PREFIX/etc/OpenCL/vendors
+#   echo "$HOME/.local/lib/opencl/libOpenCL.so" > $PREFIX/etc/OpenCL/vendors/adreno.icd
+#   clinfo -l   # should list "QUALCOMM Adreno (TM) 830"
+#
+# Vulkan backend note: llama-cpp-backend-vulkan is packaged but DOES NOT
+# work on Adreno 830 — Qualcomm's compiler rejects llama.cpp's Q4_K and
+# matvec shaders (upstream issues #12421 and #6395). Use OpenCL instead.
+#
 # Memory note: Claude Code + chat server can fight for RAM on this phone.
 # If `llm` or `rcrawl ask` hangs, exit Claude first or stop the chat server.
 
@@ -23,7 +43,9 @@ set -eu
 CHAT_MODEL_PATH="${LOCAL_LLM_MODEL:-$HOME/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf}"
 CHAT_PORT="${LOCAL_LLM_PORT:-8090}"
 CHAT_THREADS="${LOCAL_LLM_THREADS:-6}"
-CHAT_CTX="${LOCAL_LLM_CTX:-32768}"
+CHAT_CTX="${LOCAL_LLM_CTX:-16384}"
+CHAT_BACKEND="${LOCAL_LLM_BACKEND:-cpu}"
+OPENCL_LIB_DIR="$HOME/.local/lib/opencl"
 
 EMBED_MODEL_PATH="${LOCAL_EMBED_MODEL:-$HOME/models/nomic-embed-text-v1.5.Q4_K_M.gguf}"
 EMBED_PORT="${LOCAL_EMBED_PORT:-8091}"
@@ -55,7 +77,23 @@ start_one() {
   if [ "$name" = "chat" ]; then
     model="$CHAT_MODEL_PATH"
     port="$CHAT_PORT"
-    args=(-t "$CHAT_THREADS" -c "$CHAT_CTX" -ctk q8_0 -ctv q8_0)
+    args=(-t "$CHAT_THREADS" -c "$CHAT_CTX")
+    case "$CHAT_BACKEND" in
+      opencl)
+        if [ ! -f "$OPENCL_LIB_DIR/libOpenCL_adreno.so" ]; then
+          echo "local-llm: opencl backend requested but $OPENCL_LIB_DIR/libOpenCL_adreno.so missing — see header for setup." >&2
+          return 1
+        fi
+        export LD_LIBRARY_PATH="$OPENCL_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        ;;
+      cpu)
+        args+=(-ctk q8_0 -ctv q8_0)
+        ;;
+      *)
+        echo "local-llm: unknown LOCAL_LLM_BACKEND='$CHAT_BACKEND' (use cpu|opencl)" >&2
+        return 2
+        ;;
+    esac
   else
     model="$EMBED_MODEL_PATH"
     port="$EMBED_PORT"
