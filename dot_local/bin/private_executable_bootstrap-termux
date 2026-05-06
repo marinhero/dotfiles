@@ -1,0 +1,103 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# One-shot bootstrap for a fresh Termux on a new device (Galaxy Tab S9 etc).
+# Assumes chezmoi has already run (dotfiles applied, .zshrc in place).
+# Idempotent — safe to re-run.
+
+set -e
+
+echo "=== Termux bootstrap ==="
+echo
+
+# ---------------------------------------------------------------------------
+# 1. Repos + base update
+# ---------------------------------------------------------------------------
+echo "→ Updating package lists..."
+yes | pkg update
+yes | pkg upgrade
+
+# Enable tur-repo (for hugo, lazygit, etc.) and x11-repo not needed on Termux phone
+echo "→ Enabling tur-repo..."
+pkg install -y tur-repo
+
+# ---------------------------------------------------------------------------
+# 2. Top-level packages (curated from working Fold 7 setup)
+# ---------------------------------------------------------------------------
+echo "→ Installing core packages..."
+pkg install -y \
+    zsh git curl wget openssh chezmoi \
+    neovim ripgrep fd bat jq zoxide less \
+    starship zellij tmux \
+    nodejs python python-pip deno golang rust \
+    clang cmake make pkg-config build-essential \
+    termux-api termux-auth android-tools \
+    ffmpeg imagemagick yt-dlp chafa \
+    gh lazygit \
+    htop neofetch \
+    lua-language-server lua51 \
+    hugo \
+    proot proot-distro \
+    clinfo vulkan-tools opencl-headers
+
+echo "→ Installing llama.cpp + backends..."
+pkg install -y llama-cpp llama-cpp-backend-opencl llama-cpp-backend-vulkan
+
+# ---------------------------------------------------------------------------
+# 3. Python: Simon Willison's llm
+# ---------------------------------------------------------------------------
+echo "→ Installing llm via pip..."
+pip install --upgrade pip
+pip install llm
+
+# ---------------------------------------------------------------------------
+# 4. Claude Code — pinned 2.1.112 + write-protected (defeats auto-updater)
+# ---------------------------------------------------------------------------
+echo "→ Installing Claude Code 2.1.112 (pinned)..."
+export DISABLE_AUTOUPDATER=1
+export TMPDIR=$PREFIX/tmp
+mkdir -p "$TMPDIR"
+
+# If a different version is already installed, remove it first
+if npm list -g --depth=0 2>/dev/null | grep -q "@anthropic-ai/claude-code"; then
+    npm uninstall -g @anthropic-ai/claude-code
+fi
+
+npm install -g @anthropic-ai/claude-code@2.1.112
+chmod -R a-w "$PREFIX/lib/node_modules/@anthropic-ai/claude-code/"
+
+# ---------------------------------------------------------------------------
+# 5. Storage permission (one-time prompt, needed for ~/storage symlinks)
+# ---------------------------------------------------------------------------
+if [ ! -d ~/storage ]; then
+    echo "→ Requesting storage permission (approve on screen)..."
+    termux-setup-storage
+fi
+
+echo
+echo "=== Bootstrap complete ==="
+echo
+cat <<'EOF'
+Manual TODOs (can't be scripted):
+
+  1. Re-pair wireless ADB on this device:
+       Developer Options → Wireless debugging → Pair device with pairing code
+       adb pair <ip>:<pair-port>   (then enter 6-digit code)
+       fix-phantom <ip>:<main-port>
+
+  2. Battery: Settings → Apps → Termux → Battery → Unrestricted
+     Also disable "Put unused apps to sleep" for Termux
+
+  3. Caps Lock remap: install Key Mapper from Play Store
+     Add: Caps Lock → tap=Esc, hold=Ctrl
+
+  4. Models (~7 GB): copy from Fold via adb push, syncthing, or USB-C:
+       ~/models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+       ~/models/gemma-4-E4B-it-Q4_K_M.gguf
+       ~/models/nomic-embed-text-v1.5.Q4_K_M.gguf
+
+  5. Verify LLM backend on Adreno 740:
+       clinfo | head     # check OpenCL device shows up
+       vulkaninfo | head # Vulkan may actually work on 740 (vs dead on 830)
+     If Vulkan reports devices, llama-cpp-backend-vulkan will outperform CPU.
+
+  6. Restart shell (or `exec zsh`) to pick up wake-lock + new PATH.
+EOF

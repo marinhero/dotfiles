@@ -1,0 +1,64 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Reapply Android phantom-process-killer disable via wireless ADB-to-self.
+# Usage: fix-phantom <host:port>     (host:port from Wireless Debugging screen)
+#        fix-phantom check           (verify current state, requires active adb connection)
+
+set -e
+
+usage() {
+    cat <<EOF
+fix-phantom — reapply phantom process killer disable
+
+Usage:
+  fix-phantom <host:port>   Connect via wireless ADB and apply settings
+  fix-phantom check         Verify current state (needs active adb connection)
+
+To get host:port:
+  Settings → Developer Options → Wireless debugging → tap into it
+  Use the main IP:port (NOT the pairing code one)
+
+If pairing has expired (rare), re-pair first:
+  adb pair <pair-host>:<pair-port>   # then enter 6-digit code
+EOF
+}
+
+verify() {
+    local result max
+    result=$(adb shell settings get global settings_enable_monitor_phantom_procs 2>/dev/null || echo "ERR")
+    max=$(adb shell device_config get activity_manager max_phantom_processes 2>/dev/null || echo "ERR")
+
+    if [ "$result" = "false" ] && [ "$max" = "2147483647" ]; then
+        echo "✓ Phantom killer disabled (monitor=$result, max=$max)"
+        return 0
+    else
+        echo "✗ Not fully disabled: monitor=$result, max=$max"
+        return 1
+    fi
+}
+
+case "${1:-}" in
+    ""|-h|--help)
+        usage
+        exit 0
+        ;;
+    check)
+        verify
+        exit $?
+        ;;
+    *)
+        target="$1"
+        echo "→ Connecting to $target..."
+        if ! adb connect "$target"; then
+            echo "Failed. Is Wireless Debugging on? Is the port current?"
+            exit 1
+        fi
+
+        echo "→ Applying settings..."
+        adb shell settings put global settings_enable_monitor_phantom_procs false
+        adb shell device_config put activity_manager max_phantom_processes 2147483647
+        adb shell device_config set_sync_disabled_for_tests persistent
+
+        echo "→ Verifying..."
+        verify
+        ;;
+esac
