@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Reapply Android phantom-process-killer disable via wireless ADB-to-self.
-# Usage: fix-phantom <host:port>     (host:port from Wireless Debugging screen)
-#        fix-phantom check           (verify current state, requires active adb connection)
+# Reapply Android phantom-process-killer disable via Shizuku/rish.
+# Usage: fix-phantom         Apply settings (default)
+#        fix-phantom check   Verify current state
 
 set -e
 
@@ -10,22 +10,30 @@ usage() {
 fix-phantom — reapply phantom process killer disable
 
 Usage:
-  fix-phantom <host:port>   Connect via wireless ADB and apply settings
-  fix-phantom check         Verify current state (needs active adb connection)
+  fix-phantom         Apply settings (default)
+  fix-phantom check   Verify current state
 
-To get host:port:
-  Settings → Developer Options → Wireless debugging → tap into it
-  Use the main IP:port (NOT the pairing code one)
-
-If pairing has expired (rare), re-pair first:
-  adb pair <pair-host>:<pair-port>   # then enter 6-digit code
+Requires Shizuku running + rish in PATH. If rish errors, re-tap "Start"
+in the Shizuku app (service dies on reboot).
 EOF
 }
 
+require_rish() {
+    command -v rish >/dev/null || {
+        echo "ERROR: rish not found. Install Shizuku + rish first." >&2
+        exit 1
+    }
+    rish -c true >/dev/null 2>&1 || {
+        echo "ERROR: rish failed — Shizuku service not running. Restart it from the app." >&2
+        exit 1
+    }
+}
+
 verify() {
+    require_rish
     local result max
-    result=$(adb shell settings get global settings_enable_monitor_phantom_procs 2>/dev/null || echo "ERR")
-    max=$(adb shell device_config get activity_manager max_phantom_processes 2>/dev/null || echo "ERR")
+    result=$(rish -c 'settings get global settings_enable_monitor_phantom_procs' 2>/dev/null || echo "ERR")
+    max=$(rish -c 'device_config get activity_manager max_phantom_processes' 2>/dev/null || echo "ERR")
 
     if [ "$result" = "false" ] && [ "$max" = "2147483647" ]; then
         echo "✓ Phantom killer disabled (monitor=$result, max=$max)"
@@ -36,29 +44,19 @@ verify() {
     fi
 }
 
-case "${1:-}" in
-    ""|-h|--help)
-        usage
-        exit 0
-        ;;
-    check)
-        verify
-        exit $?
-        ;;
-    *)
-        target="$1"
-        echo "→ Connecting to $target..."
-        if ! adb connect "$target"; then
-            echo "Failed. Is Wireless Debugging on? Is the port current?"
-            exit 1
-        fi
+apply() {
+    require_rish
+    echo "→ Applying settings via rish..."
+    rish -c 'settings put global settings_enable_monitor_phantom_procs false'
+    rish -c 'device_config put activity_manager max_phantom_processes 2147483647'
+    rish -c 'device_config set_sync_disabled_for_tests persistent'
+    echo "→ Verifying..."
+    verify
+}
 
-        echo "→ Applying settings..."
-        adb shell settings put global settings_enable_monitor_phantom_procs false
-        adb shell device_config put activity_manager max_phantom_processes 2147483647
-        adb shell device_config set_sync_disabled_for_tests persistent
-
-        echo "→ Verifying..."
-        verify
-        ;;
+case "${1:-apply}" in
+    -h|--help) usage ;;
+    check)     verify ;;
+    apply)     apply ;;
+    *)         usage; exit 1 ;;
 esac
