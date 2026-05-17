@@ -83,7 +83,15 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Storage permission (one-time prompt, needed for ~/storage symlinks)
+# 6. rish (Shizuku shell) — chmod if already placed at ~/Code/rish/rish
+# ---------------------------------------------------------------------------
+if [ -f "$HOME/Code/rish/rish" ] && [ ! -x "$HOME/Code/rish/rish" ]; then
+    echo "→ Making rish executable..."
+    chmod +x "$HOME/Code/rish/rish"
+fi
+
+# ---------------------------------------------------------------------------
+# 7. Storage permission (one-time prompt, needed for ~/storage symlinks)
 # ---------------------------------------------------------------------------
 if [ ! -d ~/storage ]; then
     echo "→ Requesting storage permission (approve on screen)..."
@@ -96,10 +104,11 @@ echo
 cat <<'EOF'
 Manual TODOs (can't be scripted):
 
-  1. Re-pair wireless ADB on this device:
-       Developer Options → Wireless debugging → Pair device with pairing code
-       adb pair <ip>:<pair-port>   (then enter 6-digit code)
-       fix-phantom <ip>:<main-port>
+  1. Shizuku + phantom process killer:
+       a. Install Shizuku from Play Store, start it
+       b. In Shizuku: "Use Shizuku in terminal apps" → export rish to ~/Code/rish/rish
+       c. Set battery to Unrestricted for both Termux AND Shizuku (see step 2)
+       d. Run: fix-phantom
 
   2. Battery: Settings → Apps → Termux → Battery → Unrestricted
      Also disable "Put unused apps to sleep" for Termux
