@@ -487,13 +487,17 @@ install_oh_my_zsh() {
   local home_dir
   home_dir="$(target_home)"
 
-  if [[ -d "$home_dir/.oh-my-zsh" ]]; then
+  # Check for oh-my-zsh.sh specifically — chezmoi manages the custom/ subdir
+  # so ~/.oh-my-zsh/ may exist without the framework actually being installed.
+  if [[ -f "$home_dir/.oh-my-zsh/oh-my-zsh.sh" ]]; then
     skip "oh-my-zsh"
     return
   fi
 
   info "Installing oh-my-zsh"
-  run_as_user 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
+  # RUNZSH=no / CHSH=no: don't spawn a new shell or call chsh (fails on Termux).
+  # --unattended works on standard Linux/macOS; the env vars are the safe override.
+  run_as_user 'RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"'
 }
 
 # ---------- default shell ----------
