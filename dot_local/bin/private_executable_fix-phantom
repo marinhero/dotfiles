@@ -19,10 +19,15 @@ EOF
 }
 
 require_rish() {
-    command -v rish >/dev/null || {
-        echo "ERROR: rish not found. Install Shizuku + rish first." >&2
-        exit 1
-    }
+    # Allow rish from PATH or fallback location
+    if ! command -v rish >/dev/null; then
+        if [ -x "$HOME/Code/rish/rish" ]; then
+            export PATH="$HOME/Code/rish:$PATH"
+        else
+            echo "ERROR: rish not found. Install Shizuku + rish first." >&2
+            exit 1
+        fi
+    fi
     rish -c true >/dev/null 2>&1 || {
         echo "ERROR: rish failed — Shizuku service not running. Restart it from the app." >&2
         exit 1
