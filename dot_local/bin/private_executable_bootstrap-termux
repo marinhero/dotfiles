@@ -64,7 +64,26 @@ npm install -g @anthropic-ai/claude-code@2.1.112
 chmod -R a-w "$PREFIX/lib/node_modules/@anthropic-ai/claude-code/"
 
 # ---------------------------------------------------------------------------
-# 5. Storage permission (one-time prompt, needed for ~/storage symlinks)
+# 5. Iosevka Term Nerd Font → ~/.termux/font.ttf
+# ---------------------------------------------------------------------------
+if [ ! -f ~/.termux/font.ttf ]; then
+    echo "→ Installing IosevkaTerm Nerd Font..."
+    mkdir -p ~/.termux
+    latest_url="$(curl -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest \
+        | grep -o 'https://[^"]*IosevkaTerm\.zip' | head -1)"
+    tmp_zip="$TMPDIR/IosevkaTerm.zip"
+    curl -fsSL -o "$tmp_zip" "$latest_url"
+    # Extract the regular (non-bold/italic) TTF as the Termux font
+    unzip -p "$tmp_zip" "IosevkaTermNerdFont-Regular.ttf" > ~/.termux/font.ttf
+    rm -f "$tmp_zip"
+    termux-reload-settings
+    echo "→ Font installed."
+else
+    echo "→ Font already installed, skipping."
+fi
+
+# ---------------------------------------------------------------------------
+# 6. Storage permission (one-time prompt, needed for ~/storage symlinks)
 # ---------------------------------------------------------------------------
 if [ ! -d ~/storage ]; then
     echo "→ Requesting storage permission (approve on screen)..."
