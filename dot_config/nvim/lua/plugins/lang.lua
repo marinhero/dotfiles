@@ -4,6 +4,18 @@ local function is_deno_project(fname)
 end
 
 return {
+  -- stylua is installed via `pkg install stylua` on Termux (Mason can't
+  -- fetch the arm64-Android binary). Remove it from Mason's ensure_installed
+  -- so it stops retrying on every startup.
+  {
+    "mason-org/mason.nvim",
+    opts = function(_, opts)
+      opts.ensure_installed = vim.tbl_filter(function(p)
+        return p ~= "stylua"
+      end, opts.ensure_installed or {})
+    end,
+  },
+
   -- Treesitter: ensure TS/web parsers are installed
   {
     "nvim-treesitter/nvim-treesitter",
