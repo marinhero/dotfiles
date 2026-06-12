@@ -26,8 +26,13 @@ repo/**
 .local/bin/rcrawl
 {{- end }}
 
-# Desktop-only configs — skip on Termux (Android)
-{{- if eq .chezmoi.os "android" }}
+# bootstrap-proot only belongs inside a proot-distro guest
+{{- if not .is_proot }}
+.local/bin/bootstrap-proot
+{{- end }}
+
+# Desktop-only configs — skip on Termux (Android) and proot-distro (headless)
+{{- if or (eq .chezmoi.os "android") .is_proot }}
 .config/polybar/**
 .config/rofi/**
 .config/sxhkd/**

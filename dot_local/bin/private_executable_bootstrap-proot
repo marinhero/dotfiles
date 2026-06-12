@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# One-shot bootstrap for a fresh Debian proot-distro guest (inside Termux).
+# The native-Termux counterpart is `bootstrap-termux`; this is its equivalent
+# for the world *inside* the proot, where pkg/$PREFIX/termux-* don't exist and
+# everything comes from apt instead.
+#
+# Assumes chezmoi has already run (dotfiles applied). Run as root.
+# Idempotent — safe to re-run.
+
+set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "bootstrap-proot: run as root (proot-distro guests are root)." >&2
+  exit 1
+fi
+
+echo "=== Debian proot bootstrap ==="
+echo
+
+# ---------------------------------------------------------------------------
+# 1. Base update
+# ---------------------------------------------------------------------------
+echo "→ Updating package lists..."
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get -y upgrade
+
+# ---------------------------------------------------------------------------
+# 2. Core packages (apt equivalents of the bootstrap-termux set)
+# ---------------------------------------------------------------------------
+echo "→ Installing core packages..."
+apt-get install -y \
+    zsh git curl wget openssh-client ca-certificates unzip less \
+    neovim ripgrep fd-find bat jq zoxide fzf tmux \
+    python3 python3-pip python3-venv golang \
+    build-essential clang cmake make pkg-config \
+    gh
+
+# Debian ships these under non-standard binary names; expose the expected ones.
+#   fd-find → fdfind,  bat → batcat
+mkdir -p "$HOME/.local/bin"
+[ -x /usr/bin/fdfind ] && ln -sf /usr/bin/fdfind "$HOME/.local/bin/fd"
+[ -x /usr/bin/batcat ] && ln -sf /usr/bin/batcat "$HOME/.local/bin/bat"
+
+# Node arrives via the nodesource repo if already configured; otherwise apt's.
+if ! command -v node >/dev/null 2>&1; then
+  echo "→ Installing nodejs..."
+  apt-get install -y nodejs npm
+fi
+
+# ---------------------------------------------------------------------------
+# 3. Tools not packaged in Debian — install via upstream installers
+# ---------------------------------------------------------------------------
+if ! command -v chezmoi >/dev/null 2>&1; then
+  echo "→ Installing chezmoi..."
+  sh -c "$(curl -fsSL https://get.chezmoi.io)" -- -b /usr/local/bin
+fi
+
+if ! command -v starship >/dev/null 2>&1; then
+  echo "→ Installing starship prompt..."
+  curl -fsSL https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# ---------------------------------------------------------------------------
+# 4. oh-my-zsh (framework only; chezmoi manages custom/)
+# ---------------------------------------------------------------------------
+if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
+  echo "→ Installing oh-my-zsh..."
+  RUNZSH=no CHSH=no sh -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+else
+  echo "→ oh-my-zsh already installed, skipping."
+fi
+
+# ---------------------------------------------------------------------------
+# 5. Default shell → zsh
+# ---------------------------------------------------------------------------
+zsh_path="$(command -v zsh)"
+grep -qx "$zsh_path" /etc/shells 2>/dev/null || echo "$zsh_path" >> /etc/shells
+if [ "$(getent passwd root | cut -d: -f7)" != "$zsh_path" ]; then
+  echo "→ Setting zsh as default shell..."
+  chsh -s "$zsh_path" root
+fi
+
+echo
+echo "=== Bootstrap complete ==="
+echo
+cat <<'EOF'
+Not packaged in Debian — install by hand if you want them:
+
+  zellij   curl -fsSL https://zellij.dev/launch | bash   (or cargo install zellij)
+  lazygit  grab the linux_arm64 tarball from the GitHub releases page
+
+Notes:
+  - inotify is flaky under proot; some file-watchers won't fire.
+  - Restart the shell (`exec zsh`) to pick up the new default + PATH.
+EOF

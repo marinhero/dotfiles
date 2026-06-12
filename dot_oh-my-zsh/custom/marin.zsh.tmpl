@@ -35,9 +35,14 @@ if [ "$TERM" = "st-256color" ]; then
 fi
 
 #------------ASDF VERSION MANAGER-----
-# asdf v0.16+ shims must be first in PATH so they take priority over system binaries
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+# asdf v0.16+ shims must be first in PATH so they take priority over system
+# binaries. Only do this when asdf is actually installed — on Termux/proot the
+# toolchain comes from pkg/apt, not asdf, and an unconditional prepend leaves a
+# dead ~/.asdf/shims entry on PATH.
+if [[ -d "${ASDF_DATA_DIR:-$HOME/.asdf}/shims" ]]; then
+  export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+  fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+fi
 
 #------------ALIAS (Shared)------------
 
@@ -305,18 +310,28 @@ if command -v asdf &>/dev/null; then
 fi
 
 # Fallback to system install
-if (( ! _fzf_sourced )); then
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    for fzf_dir in /opt/homebrew/opt/fzf /usr/local/opt/fzf; do
-      if [[ -d "$fzf_dir/shell" ]]; then
-        [[ -f "$fzf_dir/shell/key-bindings.zsh" ]] && source "$fzf_dir/shell/key-bindings.zsh"
-        [[ -f "$fzf_dir/shell/completion.zsh" ]]   && source "$fzf_dir/shell/completion.zsh"
+if (( ! _fzf_sourced )) && command -v fzf &>/dev/null; then
+  # fzf >= 0.48 ships its own shell integration via `fzf --zsh` — prefer it.
+  if fzf --zsh &>/dev/null; then
+    source <(fzf --zsh)
+    _fzf_sourced=1
+  else
+    # Older fzf: source the packaged shell files. Covers Homebrew,
+    # Termux ($PREFIX/share/fzf), Debian/Ubuntu (/usr/share/doc/fzf/examples),
+    # and other distros (/usr/share/fzf[/shell]).
+    for fzf_dir in \
+      /opt/homebrew/opt/fzf/shell /usr/local/opt/fzf/shell \
+      "${PREFIX:-/usr}/share/fzf" \
+      /usr/share/fzf/shell /usr/share/fzf \
+      /usr/share/doc/fzf/examples; do
+      if [[ -f "$fzf_dir/key-bindings.zsh" ]]; then
+        source "$fzf_dir/key-bindings.zsh"
+        [[ -f "$fzf_dir/completion.zsh" ]] && source "$fzf_dir/completion.zsh"
+        _fzf_sourced=1
         break
       fi
     done
-  else
-    [[ -f /usr/share/fzf/shell/key-bindings.zsh ]] && source /usr/share/fzf/shell/key-bindings.zsh
-    [[ -f /usr/share/fzf/shell/completion.zsh ]]   && source /usr/share/fzf/shell/completion.zsh
+    unset fzf_dir
   fi
 fi
 unset _fzf_sourced
