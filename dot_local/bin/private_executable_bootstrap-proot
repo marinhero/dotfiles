@@ -73,7 +73,18 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Default shell → zsh
+# 5. Reconcile root's passwd home with $HOME
+# ---------------------------------------------------------------------------
+# proot-distro guests run as root with HOME=/termux-home, but the passwd entry
+# still says /root. Anything that resolves ~ via getpwnam (ssh keys/known_hosts,
+# etc.) then looks in the wrong place. Point the account at the real home.
+if [ "$(getent passwd root | cut -d: -f6)" != "$HOME" ] && [ -d "$HOME" ]; then
+  echo "→ Setting root home to $HOME (was $(getent passwd root | cut -d: -f6))..."
+  usermod -d "$HOME" root
+fi
+
+# ---------------------------------------------------------------------------
+# 6. Default shell → zsh
 # ---------------------------------------------------------------------------
 zsh_path="$(command -v zsh)"
 grep -qx "$zsh_path" /etc/shells 2>/dev/null || echo "$zsh_path" >> /etc/shells
