@@ -7,6 +7,11 @@
 README.md
 AGENTS.md
 .claude/**
+# ...but DO track the portable Claude Code carry bundle (employer-agnostic harness).
+# Every ancestor must be un-ignored too, else chezmoi has no source dir to add into.
+!.claude
+!.claude/portable
+!.claude/portable/**
 .gitignore
 
 # Repo-only setup scripts
