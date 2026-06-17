@@ -3,6 +3,10 @@
 set -o vi
 set bell-style none
 
+# Default model for Claude Code (used by bare `claude` and the `cc` function).
+# claude-bedrock overrides this at runtime for the current shell.
+export ANTHROPIC_MODEL='us.anthropic.claude-opus-4-8[1m]'
+
 #------------FASTFETCH-----------------
 if command -v fastfetch &>/dev/null && [[ -z "$ZELLIJ" ]]; then
   fastfetch
@@ -46,6 +50,7 @@ alias gap='git add --patch'
 alias gc='git commit -v'
 alias gca='git commit -v --amend'
 alias gcm='git checkout master'
+alias gcma='git checkout main'
 alias gp='git push'
 alias gpf='git push --force-with-lease'
 alias gra='git reset --soft HEAD@{1}'
@@ -54,12 +59,32 @@ alias gs='git status'
 alias l='ls -l'
 alias ne='nvim'
 alias pom='git pull origin master --rebase'
+alias poma='git pull origin main --rebase'
 alias vim='nvim'
 alias vimrc='vim ~/.vimrc'
 alias zshrc='vim ~/.oh-my-zsh/custom/marin.zsh'
 
+# cc — launch Claude Code. Pass -s to bypass permission checks.
+# Model comes from the global ANTHROPIC_MODEL export above (single source of
+# truth), so it is not duplicated here.
+cc() {
+  emulate -L zsh
+  local skip=() rest=()
+  local a
+  for a in "$@"; do
+    if [[ "$a" == "-s" ]]; then
+      skip=(--dangerously-skip-permissions)
+    else
+      rest+=("$a")
+    fi
+  done
+  claude "${skip[@]}" "${rest[@]}"
+}
+alias oc='opencode'
+
 {{- if .is_work }}
 # Work-specific aliases
+alias workbench="/Users/$USER/dev/src/github.com/segmentio/images/bench-activations-namer/selection-tool.sh"
 {{- end }}
 
 {{- if .is_desktop }}
@@ -171,9 +196,17 @@ function claude-bedrock() {
   local current_time=$(date +%s)
   local model_map=""
 
+  # Portable file mtime (BSD/macOS `stat -f %m`, GNU/Linux `stat -c %Y`).
+  local file_mtime
+  if stat -f %m "$cache_file" &>/dev/null; then
+    file_mtime=$(stat -f %m "$cache_file")
+  else
+    file_mtime=$(stat -c %Y "$cache_file")
+  fi
+
   # Check if cache file exists and is recent
   if [[ -f "$cache_file" ]] && \
-     [[ $(($current_time - $(date -r "$cache_file" +%s))) -lt $cache_timeout ]]; then
+     [[ $(($current_time - $file_mtime)) -lt $cache_timeout ]]; then
     # Use cached data
     model_map=$(cat "$cache_file")
     # Verify cache contains valid JSON
@@ -287,3 +320,7 @@ if (( ! _fzf_sourced )); then
   fi
 fi
 unset _fzf_sourced
+
+#------------SECRETS-----------------
+# Machine-local secrets (not tracked by chezmoi; see .chezmoiignore).
+[ -f "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/secrets.zsh" ] && source "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/secrets.zsh"
