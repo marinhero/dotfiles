@@ -359,8 +359,17 @@ themes {
 // Session Configuration
 // ===================================
 
-// Enable session serialization
-// session_serialization true
+// Enable session serialization: persist tabs/panes/cwds/running commands to
+// the cache folder so sessions survive a zellij server restart / reboot and
+// can be resurrected by name.
+session_serialization true
+
+// Also serialize on-screen pane content so resurrected panes look the same.
+serialize_pane_viewport true
+
+// Serialize the FULL scrollback buffer (0 = use the whole scroll_buffer_size),
+// so resurrected sessions keep their entire history.
+scrollback_lines_to_serialize 0
 
 // Automatically attach to a session if one exists
 // auto_attach true
@@ -387,8 +396,12 @@ copy_command "{{ .chezmoi.homeDir }}/.local/bin/zellij-copy"
 // Scrollback Configuration
 // ===================================
 
-// Number of lines to keep in scrollback
-scrollback_lines 10000
+// Number of lines to keep in scrollback per pane. Zellij has no true-unlimited
+// setting (an unbounded buffer would grow memory without limit), so we use a
+// very large cap as a practical "unlimited". NOTE: the option is
+// `scroll_buffer_size` — the previous `scrollback_lines` key was not a real
+// zellij option and was silently ignored (buffer stayed at the 10000 default).
+scroll_buffer_size 1000000
 
 // ===================================
 // Environment Variables
