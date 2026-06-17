@@ -1,0 +1,248 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Stability test for Qwen3-14B-Q4_0 on Adreno 830 OpenCL.
+#
+# Background: 14B + opencl crashes on the Fold 7 when Claude Code is
+# also running because the Adreno driver workspace + GPU buffers +
+# Claude RAM exceed the 14 GiB budget. This script tests whether the
+# stack is stable WITHOUT Claude in the picture. Proven stable at 4K
+# ctx; 8K is OOM-prone. See memory note `project_local_llm.md`.
+#
+# BEFORE RUNNING:
+#   1. Close Claude Code (`/quit` in any active session, or kill the tab).
+#   2. Close other heavy Android apps (browsers, MNN Chat, etc.).
+#   3. Optionally reboot the phone for max free RAM.
+#   4. Confirm the model exists: ls -lh ~/models/Qwen3-14B-Q4_0.gguf
+#
+# Run from a Termux shell:
+#   test-14b-opencl
+#
+# Outputs:
+#   ~/test-14b-opencl.log         tee'd test-script output (timings, RAM, verdict)
+#   ~/test-14b-server.log         full llama-server log on clean exit
+#   ~/test-14b-server-fail-N.log  server log frozen at failure point N (if any)
+
+set -u
+
+LOG="$HOME/test-14b-opencl.log"
+MODEL="$HOME/models/Qwen3-14B-Q4_0.gguf"
+PORT=8090
+HOST="127.0.0.1"
+CTX=4096
+RESULTS="$TMPDIR/test-14b-results"
+: > "$LOG"
+mkdir -p "$RESULTS"
+
+log() { echo "$@" | tee -a "$LOG"; }
+ram_avail_mb() { free -m | awk '/^Mem:/ {print $7}'; }
+ram_line() { free -h | awk '/^Mem:/ {print "    free=" $4 "  available=" $7 "  used=" $3}'; }
+
+log "=================================================="
+log " 14B + OpenCL stability test — $(date)"
+log "=================================================="
+log ""
+
+# --- Pre-flight ----------------------------------------------------
+log "Pre-flight checks:"
+if [ ! -f "$MODEL" ]; then
+  log "  FAIL: model not found at $MODEL"
+  exit 1
+fi
+log "  model:  $MODEL ($(du -h "$MODEL" | cut -f1))"
+
+if [ ! -f "$HOME/.local/lib/opencl/libOpenCL_adreno.so" ]; then
+  log "  FAIL: Adreno OpenCL libs not in ~/.local/lib/opencl/"
+  log "        See ~/.local/bin/local-llm header for setup."
+  exit 1
+fi
+log "  opencl: libs present, ICD at \$PREFIX/etc/OpenCL/vendors/adreno.icd"
+
+log "  ram:"
+log "$(ram_line)"
+
+# Kill any existing chat server so we start clean.
+local-llm stop chat >/dev/null 2>&1 || true
+sleep 2
+
+avail=$(ram_avail_mb)
+log "  ram after stop:  available=${avail}MB"
+if [ "$avail" -lt 8500 ]; then
+  log "  WARN: <8.5GB available. Test likely to OOM. Close more apps?"
+  log "        Continuing anyway in 5s — Ctrl-C to abort."
+  sleep 5
+fi
+
+# --- Boot ----------------------------------------------------------
+log ""
+log "Booting llama-server: 14B-Q4_0, opencl, ${CTX} ctx..."
+LOCAL_LLM_BACKEND=opencl \
+  LOCAL_LLM_MODEL="$MODEL" \
+  LOCAL_LLM_CTX="$CTX" \
+  local-llm start chat 2>&1 | tee -a "$LOG"
+
+if ! curl -fsS -m 5 "http://$HOST:$PORT/health" >/dev/null; then
+  log ""
+  log "FAIL: server did not come up. Last lines of log:"
+  tail -15 "$TMPDIR/local-llm-chat.log" | sed 's/^/  /' | tee -a "$LOG"
+  exit 1
+fi
+
+log "  server up at http://$HOST:$PORT"
+log "  ram after warmup:"
+log "$(ram_line)"
+log ""
+
+# --- Test runner ---------------------------------------------------
+TEST_NUM=0
+test_passed=0
+test_failed=0
+first_fail=""
+
+run_prompt() {
+  local label=$1 max_tok=$2 prompt_text=$3
+  TEST_NUM=$((TEST_NUM + 1))
+  log "----- Test $TEST_NUM: $label (max_tokens=$max_tok) -----"
+
+  # Build JSON payload via python. Pass prompt via argv so arbitrary
+  # special chars (backticks, $, quotes, even """) survive — earlier
+  # version interpolated $prompt_text into Python source and broke on
+  # any input with embedded quote sequences.
+  local payload="$RESULTS/payload-$TEST_NUM.json"
+  python3 - "$max_tok" "$payload" "$prompt_text" <<'PYEOF'
+import json, sys
+max_tok = int(sys.argv[1])
+out = sys.argv[2]
+prompt = sys.argv[3]
+body = {
+  "model": "local",
+  "messages": [
+    {"role": "system", "content": "/no_think Answer concisely. Skip preamble."},
+    {"role": "user", "content": prompt},
+  ],
+  "max_tokens": max_tok,
+  "temperature": 0.2,
+}
+with open(out, "w") as f:
+    json.dump(body, f)
+PYEOF
+  if [ ! -s "$payload" ]; then
+    log "  FAIL: payload construction failed (python heredoc errored)"
+    test_failed=$((test_failed + 1))
+    [ -z "$first_fail" ] && first_fail="$label (payload build)"
+    return 1
+  fi
+
+  local before=$(ram_avail_mb)
+  log "  ram before: ${before}MB"
+
+  local resp="$RESULTS/resp-$TEST_NUM.json"
+  local t0=$(date +%s)
+  if ! curl -sS -m 900 "http://$HOST:$PORT/v1/chat/completions" \
+       -H 'Content-Type: application/json' -d @"$payload" > "$resp"; then
+    log "  FAIL: curl errored (server died?)"
+    cp -f "$TMPDIR/local-llm-chat.log" "$HOME/test-14b-server-fail-$TEST_NUM.log" 2>/dev/null
+    log "  full server log saved: $HOME/test-14b-server-fail-$TEST_NUM.log"
+    log "  last server log lines:"
+    tail -8 "$TMPDIR/local-llm-chat.log" | sed 's/^/    /' | tee -a "$LOG"
+    test_failed=$((test_failed + 1))
+    [ -z "$first_fail" ] && first_fail="$label"
+    return 1
+  fi
+  local elapsed=$(( $(date +%s) - t0 ))
+
+  if [ ! -s "$resp" ]; then
+    log "  FAIL: empty response after ${elapsed}s"
+    cp -f "$TMPDIR/local-llm-chat.log" "$HOME/test-14b-server-fail-$TEST_NUM.log" 2>/dev/null
+    log "  full server log saved: $HOME/test-14b-server-fail-$TEST_NUM.log"
+    tail -8 "$TMPDIR/local-llm-chat.log" | sed 's/^/    /' | tee -a "$LOG"
+    test_failed=$((test_failed + 1))
+    [ -z "$first_fail" ] && first_fail="$label"
+    return 1
+  fi
+
+  python3 - "$resp" <<'PYEOF' | tee -a "$LOG"
+import json, sys
+d = json.load(open(sys.argv[1]))
+if "error" in d:
+    print(f"  FAIL: API error: {d['error']}")
+    sys.exit(1)
+t = d.get("timings", {})
+content = d["choices"][0]["message"].get("content", "") or "(empty)"
+print(f"  decode: {t.get('predicted_per_second',0):.2f} t/s ({t.get('predicted_n','?')} tok)")
+print(f"  prompt: {t.get('prompt_per_second',0):.2f} t/s ({t.get('prompt_n','?')} tok)")
+print(f"  answer: {content[:160]}{'...' if len(content) > 160 else ''}")
+PYEOF
+
+  local rc=${PIPESTATUS[0]}
+  local after=$(ram_avail_mb)
+  log "  ram after:  ${after}MB  (delta: $((before - after))MB)"
+  log ""
+
+  if [ $rc -eq 0 ]; then
+    test_passed=$((test_passed + 1))
+  else
+    test_failed=$((test_failed + 1))
+    [ -z "$first_fail" ] && first_fail="$label"
+    return 1
+  fi
+}
+
+# --- Tests in order of increasing prompt size ----------------------
+# Quick sanity (~10 tok in, short out)
+run_prompt "tiny / 80 tok out" 80 \
+  "Name three rivers in France." || true
+
+# Medium (~50 tok in, medium out) — the ECS-style example
+run_prompt "small / 250 tok out" 250 \
+  "Explain in 4 sentences how a transformer self-attention layer works, including queries, keys, values, and the role of softmax over scaled dot products." || true
+
+# Large prompt: paste of LOCAL_LLM.md (~1.4K tokens). No quote-escaping
+# needed — payload is built via argv.
+LARGE_INPUT=$(head -80 "$HOME/LOCAL_LLM.md" 2>/dev/null)
+run_prompt "medium-prompt / ~1.4K in, 250 out" 250 \
+  "Summarize this document in 3 bullets, focused on what local-llm does and which env vars matter:
+
+$LARGE_INPUT" || true
+
+# Largest prompt that still fits in 4K ctx. The earlier 12K-char diff
+# tokenized to ~4293 tokens and exceeded ctx; cap at 8K chars (~3000
+# tokens) leaving room for system prompt + 200 output + chat formatting.
+DIFF_INPUT=$(cd ~/dotfiles && git log -p HEAD~5..HEAD 2>/dev/null | head -200 | head -c 8000)
+run_prompt "large-prompt / ~3K in, 200 out" 200 \
+  "Summarize the recent git history below in 3 bullets covering what changed and why:
+
+$DIFF_INPUT" || true
+
+# --- Report --------------------------------------------------------
+log ""
+log "=================================================="
+log " RESULTS"
+log "=================================================="
+log "  passed: $test_passed / $TEST_NUM"
+log "  failed: $test_failed / $TEST_NUM"
+[ -n "$first_fail" ] && log "  first failure: $first_fail"
+log ""
+log "  final ram:"
+log "$(ram_line)"
+log ""
+
+# Preserve the full llama-server log before stopping (stop is gentle but
+# `local-llm start` truncates the log next time, so capture it now).
+cp -f "$TMPDIR/local-llm-chat.log" "$HOME/test-14b-server.log" 2>/dev/null \
+  && log "  full server log saved: $HOME/test-14b-server.log"
+
+local-llm stop chat >/dev/null 2>&1 || true
+
+if [ "$test_failed" -eq 0 ]; then
+  log "VERDICT: 14B + opencl is stable at ${CTX} ctx without Claude Code."
+  log "         To make it the default, edit ~/dotfiles/dot_oh-my-zsh/custom/marin.zsh.tmpl:"
+  log "           export LOCAL_LLM_BACKEND=opencl"
+  log "           export LOCAL_LLM_MODEL=\$HOME/models/Qwen3-14B-Q4_0.gguf"
+  log "           export LOCAL_LLM_CTX=$CTX"
+  log "         Then chezmoi apply + restart shell."
+else
+  log "VERDICT: 14B + opencl is NOT stable at ${CTX} ctx (failed on '$first_fail')."
+  log "         Try with smaller ctx (4096) or partial GPU offload (-ngl 30)."
+fi
+
+log ""
+log "Full log: $LOG"

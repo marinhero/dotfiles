@@ -1,0 +1,39 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Run a command (or drop into a shell) inside the Debian proot.
+#
+# Termux home is bound at its own absolute path so paths like
+# ~/projects/foo resolve identically inside and outside the proot. The
+# current Termux working directory is preserved.
+#
+# Usage:
+#   debian-run                          # interactive root shell here
+#   debian-run htop                     # run a single command and exit
+#   debian-run apt install -y fzf       # apt is available; you're root
+#
+# Caveats: inotify is flaky inside proot, fs syscalls ~10-20% slower,
+# everything runs as root, --dangerously-skip-permissions blocked there.
+
+set -eu
+
+if ! command -v proot-distro >/dev/null 2>&1; then
+  echo "debian-run: proot-distro not installed (pkg install proot-distro)" >&2
+  exit 1
+fi
+
+if [ ! -d "$PREFIX/var/lib/proot-distro/installed-rootfs/debian" ]; then
+  echo "debian-run: Debian rootfs not installed (proot-distro install debian)" >&2
+  exit 1
+fi
+
+if [ $# -eq 0 ]; then
+  set -- bash -i
+fi
+
+exec proot-distro login debian \
+  --bind /data/data/com.termux/files/home:/data/data/com.termux/files/home \
+  --bind /sdcard:/sdcard \
+  --shared-tmp \
+  -- env HOME=/data/data/com.termux/files/home _CWD="$PWD" bash -c '
+    cd "$_CWD" 2>/dev/null || cd "$HOME"
+    exec "$@"
+  ' debian-run "$@"

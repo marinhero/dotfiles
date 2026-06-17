@@ -1,7 +1,19 @@
+{{- /* .chezmoi.hostname is derived from /etc/hosts and can be poisoned by
+       loopback entries (e.g. the npm supply-chain blackhole
+       `127.0.0.1 registry.npmjs.org` makes it resolve to "registry"). The
+       `hostname` command reads the kernel hostname, so it's immune. We do NOT
+       touch /etc/hosts — the blackhole must stay in place. */ -}}
 {{- $hostname := .chezmoi.hostname -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $hostname = (output "hostname" "-s" | trim) -}}
+{{- end -}}
 {{- $machine := "unknown" -}}
 
-{{- if eq $hostname "GJHLXK2QHD" -}}
+{{- if eq .chezmoi.os "android" -}}
+{{-   $machine = "termux" -}}
+{{- else if and (eq .chezmoi.os "linux") (regexMatch "(?i)proot" (output "uname" "-r")) -}}
+{{-   $machine = "proot" -}}
+{{- else if eq $hostname "GJHLXK2QHD" -}}
 {{-   $machine = "work" -}}
 {{- else if eq $hostname "nostromo" -}}
 {{-   $machine = "desktop" -}}
@@ -16,3 +28,5 @@
     is_work = {{ eq $machine "work" }}
     is_desktop = {{ eq $machine "desktop" }}
     is_personal_laptop = {{ eq $machine "personal-laptop" }}
+    is_termux = {{ eq $machine "termux" }}
+    is_proot = {{ eq $machine "proot" }}

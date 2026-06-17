@@ -2,6 +2,16 @@
 	email = alcara_m@pm.me
   name = Marín Alcaraz
 
+[init]
+  defaultBranch = main
+
+[core]
+  editor = nvim
+  excludesfile = ~/.gitignore_global
+
+[pull]
+  rebase = true
+
 [color]
   ui = true
 
@@ -41,5 +51,3 @@
 
 [branch]
   autosetuprebase=always
-[core]
-  excludesfile = ~/.gitignore_global

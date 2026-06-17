@@ -1,0 +1,43 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# kbtoggle — swap Termux extra-keys + soft-kb hiding for BT vs soft keyboard.
+# Usage: kbtoggle              auto-toggle current state
+#        kbtoggle bt           hide soft kb + extra-keys (BT keyboard)
+#        kbtoggle soft         show soft kb + two-row extra-keys
+
+set -e
+PROPS="$HOME/.termux/termux.properties"
+EXTRA_SOFT="[['ESC','/','-','HOME','UP','END','PGUP'],['TAB','CTRL','ALT','LEFT','DOWN','RIGHT','PGDN']]"
+EXTRA_BT="[]"
+
+[ -f "$PROPS" ] || { echo "Not found: $PROPS" >&2; exit 1; }
+
+current_mode() {
+    grep -qE '^extra-keys[[:space:]]*=[[:space:]]*\[\[' "$PROPS" && echo soft || echo bt
+}
+
+set_mode() {
+    local mode="$1" extra hide
+    case "$mode" in
+        bt)   extra="$EXTRA_BT";   hide="true"  ;;
+        soft) extra="$EXTRA_SOFT"; hide="false" ;;
+    esac
+
+    awk -v extra="$extra" -v hide="$hide" '
+        /^extra-keys[[:space:]]*=/                    { print "extra-keys = " extra; se=1; next }
+        /^hide-soft-keyboard-on-startup[[:space:]]*=/ { print "hide-soft-keyboard-on-startup = " hide; sh=1; next }
+        { print }
+        END {
+            if (!se) print "extra-keys = " extra
+            if (!sh) print "hide-soft-keyboard-on-startup = " hide
+        }
+    ' "$PROPS" > "$PROPS.tmp" && mv "$PROPS.tmp" "$PROPS"
+
+    termux-reload-settings
+    echo "→ kbtoggle: $mode"
+}
+
+case "${1:-toggle}" in
+    bt|soft)   set_mode "$1" ;;
+    toggle|"") cur=$(current_mode); next=$([ "$cur" = soft ] && echo bt || echo soft); set_mode "$next" ;;
+    *) echo "Usage: kbtoggle [bt|soft|toggle]" >&2; exit 1 ;;
+esac

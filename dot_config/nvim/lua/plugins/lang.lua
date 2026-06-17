@@ -4,6 +4,18 @@ local function is_deno_project(fname)
 end
 
 return {
+  -- stylua is installed via `pkg install stylua` on Termux (Mason can't
+  -- fetch the arm64-Android binary). Remove it from Mason's ensure_installed
+  -- so it stops retrying on every startup.
+  {
+    "mason-org/mason.nvim",
+    opts = function(_, opts)
+      opts.ensure_installed = vim.tbl_filter(function(p)
+        return p ~= "stylua"
+      end, opts.ensure_installed or {})
+    end,
+  },
+
   -- Treesitter: ensure TS/web parsers are installed
   {
     "nvim-treesitter/nvim-treesitter",
@@ -28,9 +40,22 @@ return {
   {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
-      if vim.lsp and type(vim.lsp.config) == "function" then
-        vim.lsp.config("denols", { root_markers = { "deno.json", "deno.jsonc" } })
-        vim.lsp.config("vtsls", { root_markers = { "package.json", "tsconfig.json" } })
+      -- vim.lsp.config is a callable in nvim 0.11 and a table in 0.12+. Try
+      -- the callable form first, fall back to direct table assignment.
+      local set_lsp_config = function(name, cfg)
+        if type(vim.lsp.config) == "function" then
+          vim.lsp.config(name, cfg)
+        elseif type(vim.lsp.config) == "table" then
+          vim.lsp.config[name] = vim.tbl_deep_extend("force", vim.lsp.config[name] or {}, cfg)
+        end
+      end
+      set_lsp_config("denols", { root_markers = { "deno.json", "deno.jsonc" } })
+      set_lsp_config("vtsls", { root_markers = { "package.json", "tsconfig.json" } })
+      -- LazyVim's typescript extra enables vtsls but not denols. Enable it
+      -- here so it attaches in Deno projects (root_markers above keeps it
+      -- from firing in Node projects).
+      if type(vim.lsp.enable) == "function" then
+        pcall(vim.lsp.enable, "denols")
       end
 
       opts.servers = opts.servers or {}

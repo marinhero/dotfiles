@@ -1,0 +1,67 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Reapply Android phantom-process-killer disable via Shizuku/rish.
+# Usage: fix-phantom         Apply settings (default)
+#        fix-phantom check   Verify current state
+
+set -e
+
+usage() {
+    cat <<EOF
+fix-phantom — reapply phantom process killer disable
+
+Usage:
+  fix-phantom         Apply settings (default)
+  fix-phantom check   Verify current state
+
+Requires Shizuku running + rish in PATH. If rish errors, re-tap "Start"
+in the Shizuku app (service dies on reboot).
+EOF
+}
+
+require_rish() {
+    # Allow rish from PATH or fallback location
+    if ! command -v rish >/dev/null; then
+        if [ -x "$HOME/Code/rish/rish" ]; then
+            export PATH="$HOME/Code/rish:$PATH"
+        else
+            echo "ERROR: rish not found. Install Shizuku + rish first." >&2
+            exit 1
+        fi
+    fi
+    rish -c true >/dev/null 2>&1 || {
+        echo "ERROR: rish failed — Shizuku service not running. Restart it from the app." >&2
+        exit 1
+    }
+}
+
+verify() {
+    require_rish
+    local result max
+    result=$(rish -c 'settings get global settings_enable_monitor_phantom_procs' 2>/dev/null || echo "ERR")
+    max=$(rish -c 'device_config get activity_manager max_phantom_processes' 2>/dev/null || echo "ERR")
+
+    if [ "$result" = "false" ] && [ "$max" = "2147483647" ]; then
+        echo "✓ Phantom killer disabled (monitor=$result, max=$max)"
+        return 0
+    else
+        echo "✗ Not fully disabled: monitor=$result, max=$max"
+        return 1
+    fi
+}
+
+apply() {
+    require_rish
+    echo "→ Applying settings via rish..."
+    rish -c 'settings put global settings_enable_monitor_phantom_procs false'
+    rish -c 'device_config put activity_manager max_phantom_processes 2147483647'
+    rish -c 'device_config set_sync_disabled_for_tests persistent'
+    echo "→ Verifying..."
+    verify
+}
+
+case "${1:-apply}" in
+    -h|--help) usage ;;
+    check)     verify ;;
+    apply)     apply ;;
+    *)         usage; exit 1 ;;
+esac
