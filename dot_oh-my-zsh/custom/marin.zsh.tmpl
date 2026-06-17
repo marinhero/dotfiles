@@ -311,12 +311,26 @@ if (( ! _fzf_sourced )); then
       if [[ -d "$fzf_dir/shell" ]]; then
         [[ -f "$fzf_dir/shell/key-bindings.zsh" ]] && source "$fzf_dir/shell/key-bindings.zsh"
         [[ -f "$fzf_dir/shell/completion.zsh" ]]   && source "$fzf_dir/shell/completion.zsh"
+        _fzf_sourced=1
         break
       fi
     done
   else
-    [[ -f /usr/share/fzf/shell/key-bindings.zsh ]] && source /usr/share/fzf/shell/key-bindings.zsh
-    [[ -f /usr/share/fzf/shell/completion.zsh ]]   && source /usr/share/fzf/shell/completion.zsh
+    if [[ -f /usr/share/fzf/shell/key-bindings.zsh ]]; then
+      source /usr/share/fzf/shell/key-bindings.zsh
+      [[ -f /usr/share/fzf/shell/completion.zsh ]] && source /usr/share/fzf/shell/completion.zsh
+      _fzf_sourced=1
+    fi
+  fi
+fi
+
+# Fallback to a git install (~/.fzf, e.g. `git clone .../fzf && install`).
+# Adds its bin to PATH and uses the modern unified `fzf --zsh` output.
+if (( ! _fzf_sourced )) && [[ -d "$HOME/.fzf/bin" ]]; then
+  [[ ":$PATH:" == *":$HOME/.fzf/bin:"* ]] || export PATH="$PATH:$HOME/.fzf/bin"
+  if command -v fzf &>/dev/null; then
+    source <(fzf --zsh)
+    _fzf_sourced=1
   fi
 fi
 unset _fzf_sourced
