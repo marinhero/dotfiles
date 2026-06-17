@@ -69,16 +69,17 @@ alias vim='nvim'
 alias vimrc='vim ~/.vimrc'
 alias zshrc='vim ~/.oh-my-zsh/custom/marin.zsh'
 
-# cc — launch Claude Code. Pass -s to bypass permission checks.
-# Model comes from the global ANTHROPIC_MODEL export above (single source of
-# truth), so it is not duplicated here.
+# cc — launch Claude Code. Skips permission checks BY DEFAULT
+# (--dangerously-skip-permissions). Pass -ns ("no skip") to disable that and
+# run with normal permission prompts. Model comes from the global
+# ANTHROPIC_MODEL export above (single source of truth), not duplicated here.
 cc() {
   emulate -L zsh
-  local skip=() rest=()
+  local skip=(--dangerously-skip-permissions) rest=()
   local a
   for a in "$@"; do
-    if [[ "$a" == "-s" ]]; then
-      skip=(--dangerously-skip-permissions)
+    if [[ "$a" == "-ns" ]]; then
+      skip=()
     else
       rest+=("$a")
     fi

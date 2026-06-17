@@ -14,21 +14,28 @@ AGENTS.md
 !.claude/portable/**
 .gitignore
 
-# Repo-only setup scripts (and the parent dir on Termux)
-repo/scripts/**
-{{- if eq .chezmoi.os "android" }}
+# Repo-only setup scripts live in repo/ — never apply them to $HOME on any
+# machine (they're run from the checkout, not deployed). Ignore the whole tree
+# including the bare dir entry, so apply doesn't create an empty ~/repo/.
 repo
 repo/**
-{{- end }}
 
 # Keep bspwm config local-only (not managed/applied by chezmoi)
 .config/bspwm/**
 
-# debian-run + local-llm + rcrawl are Termux-only
+# Termux-only tooling (android). debian-run/local-llm/rcrawl are the local-LLM
+# stack; bootstrap-termux/kbtoggle/fix-phantom/test-14b-opencl are device setup
+# helpers; .termux/ holds the Termux app config + font.
 {{- if ne .chezmoi.os "android" }}
 .local/bin/debian-run
 .local/bin/local-llm
 .local/bin/rcrawl
+.local/bin/bootstrap-termux
+.local/bin/kbtoggle
+.local/bin/fix-phantom
+.local/bin/test-14b-opencl
+.termux
+.termux/**
 {{- end }}
 
 # bootstrap-proot only belongs inside a proot-distro guest
@@ -36,14 +43,15 @@ repo/**
 .local/bin/bootstrap-proot
 {{- end }}
 
-# Desktop-only configs — skip on Termux (Android) and proot-distro (headless)
-{{- if or (eq .chezmoi.os "android") .is_proot }}
+# Linux-desktop (X11/bspwm) configs — apply ONLY on a real Linux desktop.
+# Skip everywhere else: macOS (darwin), Termux (android), proot-distro (headless
+# Linux). i.e. apply only when linux AND not proot.
+{{- if not (and (eq .chezmoi.os "linux") (not .is_proot)) }}
 .config/polybar/**
 .config/rofi/**
 .config/sxhkd/**
 .config/picom/**
 .config/gtk-3.0/**
-.config/ghostty/**
 .gtkrc-2.0
 .local/bin/st-wrapper
 .local/bin/lock-screen
@@ -55,6 +63,12 @@ repo/**
 .local/share/applications/st.desktop
 .local/share/applications
 .local/share/applications/**
+{{- end }}
+
+# Cross-desktop apps that also run on macOS (ghostty terminal, btop) — apply on
+# macOS + Linux desktop, but skip on headless Termux (android) / proot.
+{{- if or (eq .chezmoi.os "android") .is_proot }}
+.config/ghostty/**
 .config/btop/**
 .config/btop
 {{- end }}
