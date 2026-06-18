@@ -3,17 +3,15 @@
 // Applied only when a session is first CREATED; resurrected sessions restore
 // their serialized tabs instead.
 //
-// A custom layout REPLACES zellij's default, so we must add the tab-bar and
-// status-bar plugins ourselves via default_tab_template — otherwise tabs are
-// invisible (no chrome) even though they exist.
+// A custom layout REPLACES zellij's default, so we add the bar plugin ourselves
+// via default_tab_template — otherwise tabs are invisible. Use the single-line
+// compact-bar to match the global `default_layout "compact"` look (not the
+// taller tab-bar + status-bar pair).
 layout {
     default_tab_template {
-        pane size=1 borderless=true {
-            plugin location="zellij:tab-bar"
-        }
         children
         pane size=1 borderless=true {
-            plugin location="zellij:status-bar"
+            plugin location="zellij:compact-bar"
         }
     }
 
