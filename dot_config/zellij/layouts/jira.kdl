@@ -1,5 +1,5 @@
 // jira.kdl — default layout for ticket-named sessions launched via `zj`.
-// Three tabs: CLAUDE (Claude Code), SHELL (plain shell), MISC (lazydocker).
+// Three tabs: CLAUDE (Claude Code), SHELL (plain shell), MISC (plain shell).
 // Applied only when a session is first CREATED; resurrected sessions restore
 // their serialized tabs instead.
 //
@@ -24,6 +24,6 @@ layout {
         pane
     }
     tab name="MISC" {
-        pane command="lazydocker"
+        pane
     }
 }
