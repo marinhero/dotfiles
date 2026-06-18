@@ -16,8 +16,10 @@ layout {
     }
 
     tab name="CLAUDE" focus=true {
+        // Skip permission checks by default, matching the `cc` shell function.
+        // A pane command bypasses the shell, so the flag is set explicitly here.
         pane command="claude" {
-            args "--model" "us.anthropic.claude-opus-4-8[1m]"
+            args "--model" "us.anthropic.claude-opus-4-8[1m]" "--dangerously-skip-permissions"
         }
     }
     tab name="SHELL" {
