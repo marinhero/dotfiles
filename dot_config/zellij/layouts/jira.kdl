@@ -2,7 +2,21 @@
 // Three tabs: CLAUDE (Claude Code), SHELL (plain shell), MISC (lazydocker).
 // Applied only when a session is first CREATED; resurrected sessions restore
 // their serialized tabs instead.
+//
+// A custom layout REPLACES zellij's default, so we must add the tab-bar and
+// status-bar plugins ourselves via default_tab_template — otherwise tabs are
+// invisible (no chrome) even though they exist.
 layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+        children
+        pane size=1 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+
     tab name="CLAUDE" focus=true {
         pane command="claude" {
             args "--model" "us.anthropic.claude-opus-4-8[1m]"
