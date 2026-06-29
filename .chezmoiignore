@@ -72,3 +72,10 @@ repo/**
 .config/btop/**
 .config/btop
 {{- end }}
+
+# macOS-only: screenshot-path-to-clipboard watcher. Needs pbcopy + a launchd
+# LaunchAgent, neither of which exists on Linux/Termux/proot. Apply on darwin only.
+{{- if ne .chezmoi.os "darwin" }}
+.local/bin/copy-screenshot-path.sh
+Library/LaunchAgents/com.malcaraz.screenshotpath.plist
+{{- end }}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.malcaraz.screenshotpath</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{ .chezmoi.homeDir }}/.local/bin/copy-screenshot-path.sh</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>{{ .chezmoi.homeDir }}/Screenshots</string>
+    </array>
+    <key>StandardErrorPath</key>
+    <string>/tmp/screenshotpath.err</string>
+    <key>StandardOutPath</key>
+    <string>/tmp/screenshotpath.out</string>
+</dict>
+</plist>
